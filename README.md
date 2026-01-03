@@ -1,5 +1,7 @@
 # Advanced Quantum Chemistry - Companion Code
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 **Course**: 2302638 Advanced Quantum Chemistry
 **Institution**: Department of Chemistry, Faculty of Science, Chulalongkorn University
 **Part I**: Electron Integrals and Hartree-Fock with Rys Quadrature (7 weeks)
