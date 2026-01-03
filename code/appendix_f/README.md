@@ -212,6 +212,8 @@ eps = mf.mo_energy     # Orbital energies
 
 ## References
 
-- PySCF documentation: https://pyscf.org
-- libcint (integral library): https://github.com/sunqm/libcint
+- Sun, Q.; et al. "Recent developments in the PySCF program package", J. Chem. Phys. 153 (2020) 024109. [DOI: 10.1063/5.0006074](https://doi.org/10.1063/5.0006074)
+  - Documentation: https://pyscf.org
+- Sun, Q. "Libcint: An efficient general integral library for Gaussian basis functions", J. Comput. Chem. 36 (2015) 1664-1671. [DOI: 10.1002/jcc.23981](https://doi.org/10.1002/jcc.23981)
+  - Source: https://github.com/sunqm/libcint
 - Lecture notes: Chapter 6 (SCF) and Appendix F

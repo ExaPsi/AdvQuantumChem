@@ -176,6 +176,7 @@ The implementations serve as foundation for all subsequent chapters, establishin
 
 ## References
 
-- Szabo & Ostlund, "Modern Quantum Chemistry", Chapters 2-3
-- Helgaker, Jorgensen, Olsen, "Molecular Electronic-Structure Theory", Chapter 9
+- Szabo, A.; Ostlund, N. S. *Modern Quantum Chemistry: Introduction to Advanced Electronic Structure Theory*, Chapters 2-3. Dover Publications, 1996. ISBN: 0-486-69186-1
+- Helgaker, T.; Jorgensen, P.; Olsen, J. *Molecular Electronic-Structure Theory*, Chapter 9. Wiley, 2000. ISBN: 978-0-471-96755-2
+- Sun, Q. et al. "Recent developments in the PySCF program package." *J. Chem. Phys.* **153**, 024109 (2020). [DOI: 10.1063/5.0006074](https://doi.org/10.1063/5.0006074)
 - PySCF documentation: https://pyscf.org/

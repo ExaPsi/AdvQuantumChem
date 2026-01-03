@@ -138,6 +138,16 @@ The implementations serve as building blocks for Chapter 5 (Rys Quadrature in Pr
 
 ## References
 
-- Szabo & Ostlund, "Modern Quantum Chemistry", Appendix A
-- Helgaker, Jorgensen, Olsen, "Molecular Electronic-Structure Theory", Section 9.2
-- Dupuis, Rys, King - Original Rys quadrature papers
+### Textbooks
+
+- Szabo, A. & Ostlund, N. S. *Modern Quantum Chemistry: Introduction to Advanced Electronic Structure Theory*, Dover Publications (1996), Appendix A. ISBN: 978-0-486-69186-2
+- Helgaker, T., Jorgensen, P., & Olsen, J. *Molecular Electronic-Structure Theory*, Wiley (2000), Section 9.2. ISBN: 978-0-471-96755-2
+
+### Primary Literature
+
+- Dupuis, M., Rys, J., & King, H. F. Evaluation of molecular integrals over Gaussian basis functions. *J. Chem. Phys.* **65**, 111-116 (1976). [DOI: 10.1063/1.432811](https://doi.org/10.1063/1.432811)
+
+### Software
+
+- Sun, Q. et al. Recent developments in the PySCF program package. *J. Chem. Phys.* **153**, 024109 (2020). [DOI: 10.1063/5.0006074](https://doi.org/10.1063/5.0006074)
+- Sun, Q. Libcint: An efficient general integral library for Gaussian basis functions. *J. Comput. Chem.* **36**, 1664-1671 (2015). [DOI: 10.1002/jcc.23981](https://doi.org/10.1002/jcc.23981)

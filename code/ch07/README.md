@@ -181,5 +181,6 @@ After completing these labs, students should be able to:
 
 - Szabo & Ostlund, "Modern Quantum Chemistry", Chapters 3 and 4
 - Helgaker, Jorgensen, Olsen, "Molecular Electronic-Structure Theory", Chapters 8 and 9
-- Weigend, F. "A fully direct RI-HF algorithm", Phys. Chem. Chem. Phys. 4 (2002) 4285
-- Dunning, T. H. "Gaussian basis sets", J. Chem. Phys. 90 (1989) 1007
+- F. Weigend, "A fully direct RI-HF algorithm: Implementation, optimised auxiliary basis sets, demonstration of accuracy and efficiency", Phys. Chem. Chem. Phys. 4, 4285-4291 (2002). [DOI: 10.1039/b204199p](https://doi.org/10.1039/b204199p)
+- T. H. Dunning, "Gaussian basis sets for use in correlated molecular calculations. I. The atoms boron through neon and hydrogen", J. Chem. Phys. 90, 1007-1023 (1989). [DOI: 10.1063/1.456153](https://doi.org/10.1063/1.456153)
+- Q. Sun et al., "Recent developments in the PySCF program package", J. Chem. Phys. 153, 024109 (2020). [DOI: 10.1063/5.0006074](https://doi.org/10.1063/5.0006074)

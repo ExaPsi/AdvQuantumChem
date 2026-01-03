@@ -181,6 +181,6 @@ The implementations serve as building blocks for Chapter 4 (Two-Electron Integra
 
 ## References
 
-- Szabo & Ostlund, "Modern Quantum Chemistry", Appendix A
-- Helgaker, Jorgensen, Olsen, "Molecular Electronic-Structure Theory", Chapter 9
-- Taketa, Huzinaga, O-ohata, J. Phys. Soc. Japan 21 (1966) 2313 (Gaussian integral formulas)
+- Szabo, A.; Ostlund, N. S. *Modern Quantum Chemistry: Introduction to Advanced Electronic Structure Theory*, Appendix A. Dover Publications, 1996. ISBN: 0-486-69186-1
+- Helgaker, T.; Jorgensen, P.; Olsen, J. *Molecular Electronic-Structure Theory*, Chapter 9. Wiley, 2000. ISBN: 978-0-471-96755-2
+- Taketa, H.; Huzinaga, S.; O-ohata, K. "Gaussian-Expansion Methods for Molecular Integrals." *J. Phys. Soc. Japan* **21**, 2313 (1966). [DOI: 10.1143/JPSJ.21.2313](https://doi.org/10.1143/JPSJ.21.2313)

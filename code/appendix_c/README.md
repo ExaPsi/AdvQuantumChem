@@ -194,6 +194,18 @@ Note: `boys_function.py` imports the stable implementation from `appendix_d/boys
 
 ## References
 
+### Textbooks
+
+- Szabo, A., & Ostlund, N. S. (1996). *Modern Quantum Chemistry: Introduction to Advanced Electronic Structure Theory*. Dover Publications. ISBN: 978-0-486-69186-2
+
+- Helgaker, T., Jorgensen, P., & Olsen, J. (2000). *Molecular Electronic-Structure Theory*. Wiley.
+  [DOI: 10.1002/9781119019572](https://doi.org/10.1002/9781119019572)
+
+### Software
+
+- Sun, Q., et al. (2020). Recent developments in the PySCF program package. *J. Chem. Phys.*, 153, 024109.
+  [DOI: 10.1063/5.0006074](https://doi.org/10.1063/5.0006074)
+
+### Course Materials
+
 - Lecture notes: Chapter 3 (One-electron integrals), Chapter 4 (Two-electron integrals)
-- Szabo & Ostlund, "Modern Quantum Chemistry"
-- Helgaker, Jorgensen, Olsen, "Molecular Electronic-Structure Theory"

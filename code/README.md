@@ -268,6 +268,59 @@ for f in appendix_c/*.py; do python "$f"; done
 
 All implementations are validated against PySCF reference calculations.
 
+---
+
+## References
+
+### Primary Textbooks
+
+1. **Szabo, A.; Ostlund, N. S.** *Modern Quantum Chemistry: Introduction to Advanced Electronic Structure Theory*. Dover Publications: Mineola, NY, 1996. ISBN: 978-0-486-69186-2.
+   - Chapters 3-4: Hartree-Fock theory and basis sets
+
+2. **Helgaker, T.; Jorgensen, P.; Olsen, J.** *Molecular Electronic-Structure Theory*. Wiley: Chichester, 2000.
+   [DOI: 10.1002/9781119019572](https://doi.org/10.1002/9781119019572)
+   - Comprehensive reference for integrals, SCF, and post-HF methods
+
+### Key Papers
+
+3. **Dupuis, M.; Rys, J.; King, H. F.** Evaluation of molecular integrals over Gaussian basis functions. *J. Chem. Phys.* **1976**, *65*, 111-116.
+   [DOI: 10.1063/1.432807](https://doi.org/10.1063/1.432807)
+   - Original Rys quadrature paper for ERI evaluation
+
+4. **Rys, J.; Dupuis, M.; King, H. F.** Computation of electron repulsion integrals using the Rys quadrature method. *J. Comput. Chem.* **1983**, *4*, 154-157.
+   [DOI: 10.1002/jcc.540040206](https://doi.org/10.1002/jcc.540040206)
+   - Follow-up computational procedure for Rys quadrature
+
+5. **Pulay, P.** Convergence acceleration of iterative sequences. The case of SCF iteration. *Chem. Phys. Lett.* **1980**, *73*, 393-398.
+   [DOI: 10.1016/0009-2614(80)80396-4](https://doi.org/10.1016/0009-2614(80)80396-4)
+   - Original DIIS (Direct Inversion in the Iterative Subspace) paper
+
+6. **Pulay, P.** Improved SCF convergence acceleration. *J. Comput. Chem.* **1982**, *3*, 556-560.
+   [DOI: 10.1002/jcc.540030413](https://doi.org/10.1002/jcc.540030413)
+   - DIIS improvements for SCF
+
+### Software Citations
+
+7. **Sun, Q.** Libcint: An efficient general integral library for Gaussian basis functions. *J. Comput. Chem.* **2015**, *36*, 1664-1671.
+   [DOI: 10.1002/jcc.23981](https://doi.org/10.1002/jcc.23981)
+   - Integral library underlying PySCF
+
+8. **Sun, Q.; Berkelbach, T. C.; Blunt, N. S.; Booth, G. H.; Guo, S.; Li, Z.; Liu, J.; McClain, J.; Sayfutyarova, E. R.; Sharma, S.; Wouters, S.; Chan, G. K.-L.** PySCF: the Python-based simulations of chemistry framework. *WIREs Comput. Mol. Sci.* **2018**, *8*, e1340.
+   [DOI: 10.1002/wcms.1340](https://doi.org/10.1002/wcms.1340)
+   - Primary PySCF citation
+
+9. **Sun, Q.; Zhang, X.; Banerjee, S.; Bao, P.; Barbry, M.; Blunt, N. S.; Bogdanov, N. A.; Booth, G. H.; Chen, J.; Cui, Z.-H.; et al.** Recent developments in the PySCF program package. *J. Chem. Phys.* **2020**, *153*, 024109.
+   [DOI: 10.1063/5.0006074](https://doi.org/10.1063/5.0006074)
+   - Recent PySCF developments
+
+### Constants and Units
+
+10. **Tiesinga, E.; Mohr, P. J.; Newell, D. B.; Taylor, B. N.** CODATA recommended values of the fundamental physical constants: 2018. *Rev. Mod. Phys.* **2021**, *93*, 025010.
+    [DOI: 10.1103/RevModPhys.93.025010](https://doi.org/10.1103/RevModPhys.93.025010)
+    - Fundamental constants used for unit conversions
+
+---
+
 ## License
 
 MIT License - See [LICENSE](../LICENSE) for details.

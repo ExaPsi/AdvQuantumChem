@@ -193,6 +193,6 @@ detailed_moment_analysis(T=2.5, n_roots=3)
 
 ## References
 
-- Golub & Welsch, "Calculation of Gauss Quadrature Rules", Math. Comp. 23 (1969) 221-230
-- Dupuis, Rys, King, "Evaluation of molecular integrals over Gaussian basis functions", J. Chem. Phys. 65 (1976) 111
+- Golub, G. H.; Welsch, J. H. "Calculation of Gauss Quadrature Rules", Math. Comp. 23 (1969) 221-230. [DOI: 10.1090/S0025-5718-1969-0245201-2](https://doi.org/10.1090/S0025-5718-1969-0245201-2)
+- Dupuis, M.; Rys, J.; King, H. F. "Evaluation of molecular integrals over Gaussian basis functions", J. Chem. Phys. 65 (1976) 111-116. [DOI: 10.1063/1.432811](https://doi.org/10.1063/1.432811)
 - Lecture notes: Chapter 4-5 (Rys Quadrature) and Appendix E

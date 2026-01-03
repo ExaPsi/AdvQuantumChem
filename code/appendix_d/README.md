@@ -212,6 +212,20 @@ where P(a,x) is the regularized lower incomplete gamma function.
 
 ## References
 
+### Textbooks
+
+- Helgaker, T., Jorgensen, P., & Olsen, J. (2000). *Molecular Electronic-Structure Theory*, Chapter 9. Wiley.
+  [DOI: 10.1002/9781119019572](https://doi.org/10.1002/9781119019572)
+
+### Software
+
+- Sun, Q. (2015). Libcint: An efficient general integral library for Gaussian basis functions. *J. Comput. Chem.*, 36, 1664-1671.
+  [DOI: 10.1002/jcc.23981](https://doi.org/10.1002/jcc.23981)
+  - Source reference: `fmt.c` (Boys function implementation)
+
+- Sun, Q., et al. (2020). Recent developments in the PySCF program package. *J. Chem. Phys.*, 153, 024109.
+  [DOI: 10.1063/5.0006074](https://doi.org/10.1063/5.0006074)
+
+### Course Materials
+
 - Lecture notes: Chapter 4 (Boys function introduction), Appendix D
-- libcint source: `fmt.c` (Boys function implementation)
-- Helgaker, Jorgensen, Olsen: "Molecular Electronic-Structure Theory", Chapter 9

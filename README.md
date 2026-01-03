@@ -174,7 +174,22 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## References
 
-1. Szabo, A. & Ostlund, N. S. *Modern Quantum Chemistry: Introduction to Advanced Electronic Structure Theory* (Dover, 1996)
-2. Helgaker, T., Jørgensen, P. & Olsen, J. *Molecular Electronic-Structure Theory* (Wiley, 2000)
-3. [PySCF Documentation](https://pyscf.org/user/index.html)
-4. Dupuis, M., Rys, J. & King, H. F. Evaluation of molecular integrals over Gaussian basis functions. *J. Chem. Phys.* **65**, 111-116 (1976)
+### Textbooks
+
+1. Szabo, A. & Ostlund, N. S. *Modern Quantum Chemistry: Introduction to Advanced Electronic Structure Theory* (Dover, 1996). ISBN: 978-0486691862
+
+2. Helgaker, T., Jorgensen, P. & Olsen, J. *Molecular Electronic-Structure Theory* (Wiley, 2000). [DOI: 10.1002/9781119019572](https://doi.org/10.1002/9781119019572)
+
+### Primary Literature
+
+3. Dupuis, M., Rys, J. & King, H. F. Evaluation of molecular integrals over Gaussian basis functions. *J. Chem. Phys.* **65**, 111-116 (1976). [DOI: 10.1063/1.432807](https://doi.org/10.1063/1.432807)
+
+### Software
+
+4. Sun, Q. et al. PySCF: the Python-based simulations of chemistry framework. *WIREs Comput. Mol. Sci.* **8**, e1340 (2018). [DOI: 10.1002/wcms.1340](https://doi.org/10.1002/wcms.1340)
+
+5. Sun, Q. et al. Recent developments in the PySCF program package. *J. Chem. Phys.* **153**, 024109 (2020). [DOI: 10.1063/5.0006074](https://doi.org/10.1063/5.0006074)
+
+6. Sun, Q. Libcint: An efficient general integral library for Gaussian basis functions. *J. Comput. Chem.* **36**, 1664-1671 (2015). [DOI: 10.1002/jcc.23981](https://doi.org/10.1002/jcc.23981)
+
+7. [PySCF Documentation](https://pyscf.org/user/index.html)

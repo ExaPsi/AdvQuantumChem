@@ -193,7 +193,17 @@ This code corresponds to:
 
 ## References
 
-- Szabo & Ostlund, "Modern Quantum Chemistry", Chapter 3
-- Helgaker, Jorgensen, Olsen, "Molecular Electronic-Structure Theory", Chapter 9
-- Golub & Welsch, Math. Comp. 23 (1969) 221-230 (Gaussian quadrature from moments)
-- Dupuis, Rys, King, J. Chem. Phys. 65 (1976) 111 (Rys quadrature for ERIs)
+### Textbooks
+
+- Szabo, A. & Ostlund, N. S. *Modern Quantum Chemistry: Introduction to Advanced Electronic Structure Theory*, Dover Publications (1996), Chapter 3. ISBN: 978-0-486-69186-2
+- Helgaker, T., Jorgensen, P., & Olsen, J. *Molecular Electronic-Structure Theory*, Wiley (2000), Chapter 9. ISBN: 978-0-471-96755-2
+
+### Primary Literature
+
+- Golub, G. H. & Welsch, J. H. Calculation of Gauss quadrature rules. *Math. Comp.* **23**, 221-230 (1969). [DOI: 10.1090/S0025-5718-69-99647-1](https://doi.org/10.1090/S0025-5718-69-99647-1)
+- Dupuis, M., Rys, J., & King, H. F. Evaluation of molecular integrals over Gaussian basis functions. *J. Chem. Phys.* **65**, 111-116 (1976). [DOI: 10.1063/1.432811](https://doi.org/10.1063/1.432811)
+
+### Software
+
+- Sun, Q. et al. Recent developments in the PySCF program package. *J. Chem. Phys.* **153**, 024109 (2020). [DOI: 10.1063/5.0006074](https://doi.org/10.1063/5.0006074)
+- Sun, Q. Libcint: An efficient general integral library for Gaussian basis functions. *J. Comput. Chem.* **36**, 1664-1671 (2015). [DOI: 10.1002/jcc.23981](https://doi.org/10.1002/jcc.23981)

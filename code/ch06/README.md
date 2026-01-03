@@ -183,5 +183,6 @@ VALIDATION PASSED: Energy agrees within 1e-8 Hartree
 
 - Szabo & Ostlund, "Modern Quantum Chemistry", Chapter 3
 - Helgaker, Jorgensen, Olsen, "Molecular Electronic-Structure Theory", Chapters 10-11
-- P. Pulay, Chem. Phys. Lett. 73, 393 (1980) - Original DIIS paper
-- P. Pulay, J. Comp. Chem. 3, 556 (1982) - DIIS improvements
+- P. Pulay, "Convergence acceleration of iterative sequences. The case of SCF iteration", Chem. Phys. Lett. 73, 393-398 (1980) - Original DIIS paper. [DOI: 10.1016/0009-2614(80)80396-4](https://doi.org/10.1016/0009-2614(80)80396-4)
+- P. Pulay, "Improved SCF convergence acceleration", J. Comp. Chem. 3, 556-560 (1982) - DIIS improvements. [DOI: 10.1002/jcc.540030413](https://doi.org/10.1002/jcc.540030413)
+- Q. Sun et al., "Recent developments in the PySCF program package", J. Chem. Phys. 153, 024109 (2020). [DOI: 10.1063/5.0006074](https://doi.org/10.1063/5.0006074)

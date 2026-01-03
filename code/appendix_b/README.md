@@ -180,6 +180,18 @@ Derived atomic units:
 
 ## References
 
-- CODATA 2018: https://physics.nist.gov/cuu/Constants/
+### CODATA 2018 Fundamental Constants
+
+- Tiesinga, E., Mohr, P. J., Newell, D. B., & Taylor, B. N. (2021). CODATA recommended values of the fundamental physical constants: 2018. *Rev. Mod. Phys.*, 93, 025010.
+  [DOI: 10.1103/RevModPhys.93.025010](https://doi.org/10.1103/RevModPhys.93.025010)
+- NIST Reference: https://physics.nist.gov/cuu/Constants/
+
+### Software
+
+- Sun, Q., et al. (2020). Recent developments in the PySCF program package. *J. Chem. Phys.*, 153, 024109.
+  [DOI: 10.1063/5.0006074](https://doi.org/10.1063/5.0006074)
 - PySCF documentation: https://pyscf.org
+
+### Course Materials
+
 - Lecture notes: Appendix B (Atomic Units and Conversions)

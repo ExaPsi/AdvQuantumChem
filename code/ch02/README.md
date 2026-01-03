@@ -160,6 +160,6 @@ The implementations build foundations for Chapter 6 (Hartree-Fock SCF), where th
 
 ## References
 
-- Szabo & Ostlund, "Modern Quantum Chemistry", Section 3.4.5
-- Helgaker, Jorgensen, Olsen, "Molecular Electronic-Structure Theory", Section 1.3
-- Lowdin, P.-O., J. Chem. Phys. 18, 365 (1950) (Symmetric orthogonalization)
+- Szabo, A.; Ostlund, N. S. *Modern Quantum Chemistry: Introduction to Advanced Electronic Structure Theory*, Section 3.4.5. Dover Publications, 1996. ISBN: 0-486-69186-1
+- Helgaker, T.; Jorgensen, P.; Olsen, J. *Molecular Electronic-Structure Theory*, Section 1.3. Wiley, 2000. ISBN: 978-0-471-96755-2
+- Lowdin, P.-O. "On the Non-Orthogonality Problem Connected with the Use of Atomic Wave Functions in the Theory of Molecules and Crystals." *J. Chem. Phys.* **18**, 365 (1950). [DOI: 10.1063/1.1747632](https://doi.org/10.1063/1.1747632)
