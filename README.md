@@ -176,5 +176,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 1. Szabo, A. & Ostlund, N. S. *Modern Quantum Chemistry: Introduction to Advanced Electronic Structure Theory* (Dover, 1996)
 2. Helgaker, T., Jørgensen, P. & Olsen, J. *Molecular Electronic-Structure Theory* (Wiley, 2000)
-3. [PySCF Documentation](https://pyscf.org/user.html)
+3. [PySCF Documentation](https://pyscf.org/user/index.html)
 4. Dupuis, M., Rys, J. & King, H. F. Evaluation of molecular integrals over Gaussian basis functions. *J. Chem. Phys.* **65**, 111-116 (1976)
