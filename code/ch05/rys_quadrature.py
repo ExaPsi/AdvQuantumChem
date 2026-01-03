@@ -113,16 +113,23 @@ def rys_nodes_weights(T: float, n_roots: int) -> Tuple[np.ndarray, np.ndarray]:
     H, H1 = build_hankel_matrix(m, n_roots)
 
     # Step 3: Cholesky factorization of H and compute C = L^{-1}
-    # For numerical stability, add small regularization if needed
+    # Try Cholesky first (more accurate when it works), fall back to eigendecomposition
     try:
         L = np.linalg.cholesky(H)
+        # C = L^{-1} (solve L @ C = I)
+        C = np.linalg.solve(L, np.eye(n_roots))
     except np.linalg.LinAlgError:
-        # Add tiny regularization for near-singular cases
-        eps = 1e-14 * np.trace(H) / n_roots
-        L = np.linalg.cholesky(H + eps * np.eye(n_roots))
+        # Fall back to eigenvalue decomposition for ill-conditioned cases
+        # H = V @ diag(d) @ V^T, then H^{-1/2} = V @ diag(1/sqrt(d)) @ V^T
+        eigvals, V = np.linalg.eigh(H)
 
-    # C = L^{-1} (solve L @ C = I)
-    C = np.linalg.solve(L, np.eye(n_roots))
+        # Threshold small/negative eigenvalues for numerical stability
+        thresh = max(1e-12 * eigvals.max(), 1e-30)
+        eigvals = np.maximum(eigvals, thresh)
+
+        # Compute H^{-1/2} via eigendecomposition
+        d_inv_sqrt = 1.0 / np.sqrt(eigvals)
+        C = V @ np.diag(d_inv_sqrt) @ V.T
 
     # Step 4: Build Jacobi matrix J = C @ H1 @ C^T
     J = C @ H1 @ C.T
@@ -133,8 +140,8 @@ def rys_nodes_weights(T: float, n_roots: int) -> Tuple[np.ndarray, np.ndarray]:
     # Step 5: Golub-Welsch eigendecomposition
     eigenvalues, V = np.linalg.eigh(J)
 
-    # Nodes are the eigenvalues
-    nodes = eigenvalues
+    # Nodes are the eigenvalues (clamp to [0, 1] for safety)
+    nodes = np.clip(eigenvalues, 0.0, 1.0)
 
     # Step 6: Weights from eigenvectors (Eq. 5.xx)
     # W_i = m_0 * (V_{0,i})^2
