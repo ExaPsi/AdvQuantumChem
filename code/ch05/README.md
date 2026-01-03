@@ -201,7 +201,7 @@ This code corresponds to:
 ### Primary Literature
 
 - Golub, G. H. & Welsch, J. H. Calculation of Gauss quadrature rules. *Math. Comp.* **23**, 221-230 (1969). [DOI: 10.1090/S0025-5718-69-99647-1](https://doi.org/10.1090/S0025-5718-69-99647-1)
-- Dupuis, M., Rys, J., & King, H. F. Evaluation of molecular integrals over Gaussian basis functions. *J. Chem. Phys.* **65**, 111-116 (1976). [DOI: 10.1063/1.432811](https://doi.org/10.1063/1.432811)
+- Dupuis, M., Rys, J., & King, H. F. Evaluation of molecular integrals over Gaussian basis functions. *J. Chem. Phys.* **65**, 111-116 (1976). [DOI: 10.1063/1.432807](https://doi.org/10.1063/1.432807)
 
 ### Software
 

@@ -145,7 +145,7 @@ The implementations serve as building blocks for Chapter 5 (Rys Quadrature in Pr
 
 ### Primary Literature
 
-- Dupuis, M., Rys, J., & King, H. F. Evaluation of molecular integrals over Gaussian basis functions. *J. Chem. Phys.* **65**, 111-116 (1976). [DOI: 10.1063/1.432811](https://doi.org/10.1063/1.432811)
+- Dupuis, M., Rys, J., & King, H. F. Evaluation of molecular integrals over Gaussian basis functions. *J. Chem. Phys.* **65**, 111-116 (1976). [DOI: 10.1063/1.432807](https://doi.org/10.1063/1.432807)
 
 ### Software
 
