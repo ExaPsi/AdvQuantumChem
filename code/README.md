@@ -58,7 +58,7 @@ code/
 | File | Description |
 |------|-------------|
 | `lab2a_overlap_conditioning.py` | Eigenvalues of S and conditioning vs basis set |
-| `lab2b_orthogonalizers.py` | Build X such that X^T S X = I |
+| `lab2b_orthogonalizers.py` | Build X such that X^T S X = I (canonical, symmetric, Cholesky, Gram-Schmidt) |
 | `lab2c_gen_eigenproblem.py` | Solve FC = SCε via orthogonalization |
 
 **Topics covered:**
@@ -66,6 +66,8 @@ code/
 - Near-linear dependence detection
 - Symmetric (Löwdin) orthogonalization
 - Canonical orthogonalization with thresholding
+- Cholesky orthogonalization (Section 2.8)
+- Gram-Schmidt under S-metric (pedagogical)
 - Generalized eigenvalue problem transformation
 
 ---

@@ -16,7 +16,19 @@ Key concepts:
   - Diffuse functions (aug-) lead to larger overlap and smaller eigenvalues
   - Condition number kappa(S) = lambda_max / lambda_min measures numerical stability
 
-Reference: Section 2.10 in the lecture notes (Hands-on Python: Orthogonalizers and Conditioning)
+Physical insight: Why is S != I (the identity)?
+  The overlap matrix S_uv = <u|v> = integral of u*(r) v(r) d^3r differs from I because:
+  1. Atom-centered: Each basis function is centered on an atom, not on a grid.
+     Functions on the same atom overlap significantly.
+  2. Extended: Gaussians extend to infinity (though decay rapidly).
+     Functions on neighboring atoms can overlap.
+  3. Redundancy: Large off-diagonal elements mean the basis is not efficiently
+     spanning the function space - one function can be (almost) expressed as
+     a linear combination of others.
+
+Theoretical Background:
+  - Section 2.5: The Overlap Matrix as a Metric
+  - Section 2.10: Hands-on Python (Lab 2A)
 
 Usage:
     python lab2a_overlap_conditioning.py
@@ -73,7 +85,13 @@ def overlap_spectrum(atom: str, basis: str, unit: str = "Angstrom") -> tuple:
     # This avoids division by near-zero eigenvalues that may be numerical noise
     tiny = 1e-14
     eigenvalues_kept = eigenvalues_sorted[eigenvalues_sorted > tiny]
-    condition_number = eigenvalues_kept[0] / eigenvalues_kept[-1]
+
+    # Guard against edge case where all eigenvalues are below threshold
+    # (This should never happen for a proper basis set, but defensive coding is good)
+    if len(eigenvalues_kept) == 0:
+        condition_number = np.inf
+    else:
+        condition_number = eigenvalues_kept[0] / eigenvalues_kept[-1]
 
     return mol.nao_nr(), eigenvalues_sorted, condition_number
 

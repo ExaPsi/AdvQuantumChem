@@ -1,16 +1,27 @@
 #!/usr/bin/env python3
 """
-Lab 2C: Solve FC = SCe via Orthogonalization
+Lab 2C: Solve FC = SCε via Orthogonalization
 
 This script accompanies Chapter 2 of the Advanced Quantum Chemistry lecture notes.
 It demonstrates how to:
-  1. Build the core Hamiltonian from one-electron integrals
+  1. Build the core Hamiltonian H = T + V from one-electron integrals
   2. Construct a canonical orthogonalizer X such that X^T S X = I
-  3. Transform the generalized eigenproblem FC = SCe to ordinary form F'C' = C'e
+  3. Transform the generalized eigenproblem FC = SCε to ordinary form F'C' = C'ε
   4. Verify that the resulting MO coefficients satisfy C^T S C = I
   5. Validate against scipy.linalg.eigh and PySCF
 
-Reference: Section 2.10 in the lecture notes (Hands-on Python: Orthogonalizers)
+Theoretical Background:
+  - Section 2.9: Generalized Eigenproblems in the AO Metric
+  - Section 2.10: Hands-on Python (Lab 2C)
+
+Algorithm (from Section 2.9, Algorithm 2.3):
+  1. Build X from S (Algorithm 2.2) with threshold τ
+  2. Form F' = X^T F X (transformation to orthonormal basis)
+  3. Diagonalize: solve F'C' = C'ε (standard eigenproblem)
+  4. Back-transform: C = X C' (return to AO basis)
+
+Note: In this demo, we use the core Hamiltonian H = T + V as "F" to illustrate
+the algorithm. In Hartree-Fock, F is the density-dependent Fock matrix.
 
 Usage:
     python lab2c_gen_eigenproblem.py
@@ -56,6 +67,8 @@ def canonical_orthogonalizer(S, thresh=1e-10):
     """
     Build the canonical orthogonalizer X such that X^T S X = I.
 
+    Implements Algorithm 2.2 from the lecture notes.
+
     The canonical orthogonalization uses the eigendecomposition of S:
         S = U diag(e) U^T
     Then X = U diag(e^{-1/2}) so that X^T S X = I.
@@ -67,7 +80,10 @@ def canonical_orthogonalizer(S, thresh=1e-10):
     S : ndarray (N, N)
         Overlap matrix (symmetric, positive semi-definite).
     thresh : float
-        Threshold for discarding small eigenvalues.
+        Threshold for discarding small eigenvalues. Default 1e-10.
+
+        Note: The lecture notes recommend 1e-6 to 1e-8 for production codes.
+        The default 1e-10 is more aggressive and appropriate for demonstrations.
 
     Returns
     -------

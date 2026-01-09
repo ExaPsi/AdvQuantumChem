@@ -5,18 +5,25 @@ Lab 2B: Build X such that X^T S X = I
 This script accompanies Chapter 2 of the Advanced Quantum Chemistry lecture notes.
 It demonstrates how to:
   1. Build the canonical orthogonalizer with eigenvalue thresholding
-  2. Build the symmetric (Lowdin) orthogonalizer S^(-1/2)
+  2. Build the symmetric (Löwdin) orthogonalizer with thresholding
   3. Implement Gram-Schmidt under the S-metric for pedagogical comparison
   4. Verify orthogonality of resulting transformation matrices
   5. Compare stability of different orthogonalizers across basis sets
 
-Reference: Section 2.10 and Lab 2B in the lecture notes.
+Theoretical Background:
+  - Section 2.5: The Overlap Matrix as a Metric
+  - Section 2.6: Gram-Schmidt Orthonormalization in a Nonorthonormal AO Basis
+  - Section 2.7: Canonical and Löwdin (Symmetric) Orthonormalization
+  - Section 2.8: Cholesky Orthonormalization and Practical Linear Dependence
+  - Section 2.10: Hands-on Python (Lab 2B)
+
+Reference: Helgaker, Jorgensen, Olsen, Chapter 6 (orthogonalization methods)
 
 Usage:
     python lab2b_orthogonalizers.py
 """
 import numpy as np
-from pyscf import gto, scf
+from pyscf import gto
 
 
 # =============================================================================
@@ -86,17 +93,23 @@ def canonical_orthogonalizer(S: np.ndarray, thresh: float = 1e-10) -> tuple:
 
 def symmetric_orthogonalizer(S: np.ndarray, thresh: float = 1e-10) -> tuple:
     """
-    Build Lowdin symmetric orthogonalizer S^(-1/2) with eigenvalue thresholding.
+    Build Löwdin symmetric orthogonalizer with eigenvalue thresholding.
 
-    The symmetric orthogonalizer is S^(-1/2), computed via eigendecomposition.
-    This produces orthonormal functions that are "closest" to the original
-    AOs in a least-squares sense.
+    The true Löwdin symmetric orthogonalizer is S^(-1/2), which produces
+    orthonormal functions that are "closest" to the original AOs in a
+    least-squares sense. Without thresholding:
 
-    Given S = U diag(e) U^T, we construct:
-        X = S^(-1/2) = U @ diag(e^(-1/2)) @ U^T
+        X_full = S^(-1/2) = U @ diag(e^(-1/2)) @ U^T  (N x N matrix)
 
-    With thresholding, we only include directions where e > thresh:
-        X_thresh = U_kept @ diag(e_kept^(-1/2)) @ U_kept^T
+    However, when near-linear dependencies are present (small eigenvalues),
+    we must remove those directions for numerical stability. With thresholding,
+    we return the RECTANGULAR form:
+
+        X = U_kept @ diag(e_kept^(-1/2))  (N x M matrix, M <= N)
+
+    This is mathematically equivalent to the canonical orthogonalizer when
+    thresholding is applied, because both produce X satisfying X^T S X = I_M.
+    The distinction matters only when all eigenvalues are kept.
 
     Parameters
     ----------
@@ -104,23 +117,34 @@ def symmetric_orthogonalizer(S: np.ndarray, thresh: float = 1e-10) -> tuple:
         Overlap matrix, must be symmetric positive semi-definite.
     thresh : float
         Eigenvalue threshold. Eigenvalues below this are considered
-        linear dependencies. Default 1e-10.
+        linear dependencies and are dropped. Default 1e-10.
+
+        Note: The lecture notes recommend 1e-6 to 1e-8 for production codes.
+        The default 1e-10 is more aggressive and appropriate for demonstrations
+        where numerical stability is less critical.
 
     Returns
     -------
     X : ndarray (N, M)
-        Symmetric orthogonalizer satisfying X^T S X = I.
-        If no eigenvalues are dropped, X is (N, N).
-        With dropped eigenvalues, X is (N, M) where M < N.
-    kept_eigenvalues : ndarray
+        Orthogonalizer satisfying X^T S X = I_M.
+        M <= N due to possible removal of near-dependent directions.
+    kept_eigenvalues : ndarray (M,)
         Eigenvalues that were kept (all > thresh).
 
     Notes
     -----
-    The symmetric orthogonalizer has the special property that it minimizes
-    the sum of squared differences between original and orthonormalized
-    basis functions. However, when near-linear dependencies are present,
-    we must still remove those directions.
+    The true symmetric orthogonalizer S^(-1/2) minimizes the sum of squared
+    differences between original and orthonormalized basis functions.
+    When eigenvalues are dropped, this "closest" property is lost, but
+    numerical stability is gained.
+
+    For the full N x N symmetric orthogonalizer (no thresholding), use:
+        X_full = U @ np.diag(e ** -0.5) @ U.T
+
+    See Also
+    --------
+    canonical_orthogonalizer : Identical implementation with thresholding
+    cholesky_orthogonalizer : Alternative using Cholesky decomposition
     """
     # Diagonalize overlap matrix: S = U @ diag(e) @ U^T
     eigenvalues, U = np.linalg.eigh(S)
@@ -144,6 +168,67 @@ def symmetric_orthogonalizer(S: np.ndarray, thresh: float = 1e-10) -> tuple:
     X = U_kept @ np.diag(e_kept ** (-0.5))
 
     return X, e_kept
+
+
+def cholesky_orthogonalizer(S: np.ndarray) -> np.ndarray:
+    """
+    Build Cholesky orthogonalizer X = L^{-T} where S = L L^T.
+
+    The Cholesky decomposition factors S as S = L L^T where L is lower
+    triangular. The orthogonalizer is then X = L^{-T} = (L^{-1})^T.
+
+    This satisfies X^T S X = L^{-1} (L L^T) L^{-T} = I.
+
+    Parameters
+    ----------
+    S : ndarray (N, N)
+        Overlap matrix, must be symmetric positive DEFINITE.
+        (Not just positive semi-definite - Cholesky requires strict
+        positive definiteness.)
+
+    Returns
+    -------
+    X : ndarray (N, N)
+        Cholesky orthogonalizer satisfying X^T S X = I.
+
+    Raises
+    ------
+    np.linalg.LinAlgError
+        If S is not positive definite (Cholesky decomposition fails).
+
+    Notes
+    -----
+    The Cholesky orthogonalizer has computational advantages:
+      - O(N^3/3) vs O(N^3) for eigendecomposition
+      - No eigenvalue problem to solve
+      - Naturally numerically stable for well-conditioned S
+
+    However, it has significant limitations:
+      - FAILS for near-singular S (no thresholding possible)
+      - Not suitable for ill-conditioned basis sets
+      - Use canonical/symmetric orthogonalizers when near-linear
+        dependence is expected
+
+    The orthonormalized functions are given by the columns of X, which
+    transform the AO basis to an orthonormal set via triangular
+    back-substitution.
+
+    Reference: Section 2.8 in the lecture notes (Cholesky Orthonormalization)
+
+    See Also
+    --------
+    canonical_orthogonalizer : Preferred for ill-conditioned S
+    symmetric_orthogonalizer : Alternative with "closest" property
+    """
+    # Cholesky decomposition: S = L @ L.T
+    L = np.linalg.cholesky(S)
+
+    # Orthogonalizer: X = L^{-T} = (L^{-1})^T
+    # We compute L^{-1} and then transpose
+    L_inv = np.linalg.inv(L)
+    X = L_inv.T
+
+    return X
 
 
 def gram_schmidt_metric(S: np.ndarray, thresh: float = 1e-12) -> tuple:
@@ -298,9 +383,10 @@ def check_orthogonalizer_detailed(S: np.ndarray, X: np.ndarray) -> dict:
 # Comparison Functions
 # =============================================================================
 
-def compare_orthogonalizers(S: np.ndarray, thresh: float = 1e-10) -> dict:
+def compare_orthogonalizers(S: np.ndarray, thresh: float = 1e-10,
+                            include_cholesky: bool = True) -> dict:
     """
-    Compare all three orthogonalization methods on the same overlap matrix.
+    Compare all orthogonalization methods on the same overlap matrix.
 
     Parameters
     ----------
@@ -308,6 +394,9 @@ def compare_orthogonalizers(S: np.ndarray, thresh: float = 1e-10) -> dict:
         Overlap matrix.
     thresh : float
         Eigenvalue threshold for canonical and symmetric methods.
+    include_cholesky : bool
+        Whether to include Cholesky orthogonalizer (may fail for
+        ill-conditioned S). Default True.
 
     Returns
     -------
@@ -349,6 +438,30 @@ def compare_orthogonalizers(S: np.ndarray, thresh: float = 1e-10) -> dict:
         'max_eigenvalue': e_sym.max(),
     }
 
+    # Cholesky orthogonalizer (may fail for ill-conditioned S)
+    if include_cholesky:
+        print("  Computing Cholesky orthogonalizer...")
+        try:
+            X_chol = cholesky_orthogonalizer(S)
+            err_chol = check_orthogonalizer(S, X_chol)
+            results['cholesky'] = {
+                'X': X_chol,
+                'kept_dim': X_chol.shape[1],
+                'dropped_dim': 0,  # Cholesky keeps all dimensions
+                'error': err_chol,
+                'valid': err_chol < 1e-10,
+            }
+        except np.linalg.LinAlgError:
+            print("    [cholesky] Failed - S is not positive definite")
+            results['cholesky'] = {
+                'X': None,
+                'kept_dim': 0,
+                'dropped_dim': N,
+                'error': np.inf,
+                'valid': False,
+                'failed': True,
+            }
+
     # Gram-Schmidt (use tighter threshold for numerical stability)
     print("  Computing Gram-Schmidt orthogonalizer...")
     X_gs, n_gs = gram_schmidt_metric(S, thresh=1e-12)
@@ -380,9 +493,14 @@ def print_comparison_results(results: dict, basis_name: str):
 
     for method, data in results.items():
         total_dim = data['kept_dim'] + data['dropped_dim']
-        status = "PASS" if data['valid'] else "FAIL"
-        print(f"  {method:<15} {data['kept_dim']:>4}/{total_dim:<7} "
-              f"{data['error']:<12.2e} {status:<8}")
+        if data.get('failed', False):
+            status = "FAILED"
+            print(f"  {method:<15} {'N/A':>4}/{'N/A':<7} "
+                  f"{'N/A':<12} {status:<8}")
+        else:
+            status = "PASS" if data['valid'] else "FAIL"
+            print(f"  {method:<15} {data['kept_dim']:>4}/{total_dim:<7} "
+                  f"{data['error']:<12.2e} {status:<8}")
 
 
 # =============================================================================
