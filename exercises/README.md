@@ -7,11 +7,9 @@ This folder contains complete answer keys for all checkpoint questions, Python l
 ```
 exercises/
 ├── README.md                # This file
-├── .gitignore               # Git ignore rules for LaTeX artifacts
-├── solutions_style.sty      # Unified LaTeX style for all answer keys
+├── .gitignore               # Git ignore rules
 ├── ch01/solutions/          # Chapter 1: Electron-Integral View of Quantum Chemistry
-│   ├── ch01_solutions.tex   #   LaTeX answer key source
-│   ├── ch01_solutions.pdf   #   Compiled PDF
+│   ├── ch01_solutions.pdf   #   Answer key PDF
 │   ├── exercises_ch01.py    #   Exercise Python implementations
 │   └── lab1a_solution.py    #   Lab solution
 ├── ch02/solutions/          # Chapter 2: Gaussian Basis Sets and Orthonormalization
@@ -23,8 +21,7 @@ exercises/
 ```
 
 Each chapter folder contains:
-- `chXX_solutions.tex` - LaTeX answer key for checkpoint questions
-- `chXX_solutions.pdf` - Compiled PDF of the answer key
+- `chXX_solutions.pdf` - PDF answer key for checkpoint questions
 - `exercises_chXX.py` - Python implementations for end-of-chapter exercises
 - `labXX_solution.py` - Python solutions for hands-on labs (Lab A, B, C, etc.)
 
@@ -39,17 +36,6 @@ Each chapter folder contains:
 | 5 | 12 | Labs 5A-5D | exercises_ch05.py | Rys quadrature, moment matching, J/K matrices |
 | 6 | 14 | Labs 6A-6C | exercises_ch06.py | RHF SCF, DIIS, in-core vs direct |
 | 7 | 12 | Labs 7A-7C | exercises_ch07.py | DF-HF, dipole moment, virial ratio |
-
-## Style Package
-
-All LaTeX answer keys use a shared style package for consistent formatting:
-
-- `solutions_style.sty` - Unified styling with custom environments:
-  - `solutionbox` - Blue boxes for answers
-  - `warningbox` - Red boxes for common errors
-  - `keyformulabox` - Green boxes for key formulas
-  - `outputbox` - Gray boxes for expected program output
-  - `tipbox` / `keyInsight` - Gold boxes for hints and insights
 
 ## Running the Python Solutions
 
@@ -114,29 +100,9 @@ All Python solutions validate against PySCF reference calculations with the foll
 - SCF energies: ~10^-8 Hartree
 - DF-HF energies: ~10^-6 to 10^-5 Hartree
 
-## For Instructors
+## PDF Answer Keys
 
-### Pre-compiled PDFs
-
-Each chapter includes a pre-compiled PDF answer key:
-- `ch01/solutions/ch01_solutions.pdf` through `ch07/solutions/ch07_solutions.pdf`
-
-### Compiling LaTeX Solutions
-
-The LaTeX solution files require the shared style package. Compile with:
-
-```bash
-cd exercises/ch01/solutions
-TEXINPUTS=../../: pdflatex ch01_solutions.tex
-
-# Or compile all chapters from exercises root:
-cd exercises
-for ch in ch01 ch02 ch03 ch04 ch05 ch06 ch07; do
-  (cd $ch/solutions && TEXINPUTS=../../: pdflatex ${ch}_solutions.tex)
-done
-```
-
-The solutions include:
+Each chapter includes a pre-compiled PDF answer key with:
 - Detailed derivations for checkpoint questions
 - Expected numerical outputs for labs
 - Common student errors and debugging tips
