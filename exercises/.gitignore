@@ -15,5 +15,6 @@ __pycache__/
 # Keep PDF files for distribution
 !*.pdf
 
-# Exclude style file (internal use only)
-solutions_style.sty
+# Exclude LaTeX source files (internal use only)
+*.tex
+*.sty
