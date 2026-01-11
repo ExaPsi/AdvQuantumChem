@@ -1,0 +1,19 @@
+# LaTeX auxiliary files
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Keep PDF files for distribution
+!*.pdf
+
+# Exclude style file (internal use only)
+solutions_style.sty
