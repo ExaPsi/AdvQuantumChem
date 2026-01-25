@@ -39,6 +39,13 @@ Thumbs.db
 *.bak
 *~
 
+# Generated plots from Python scripts
+moment_matching_errors.png
+/code/**/*.png
+
 # External references (separate repos)
 references/libcint/
 references/pyscf/
+
+# Screenshots (temporary)
+screenshot/

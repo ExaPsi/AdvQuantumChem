@@ -1,0 +1,339 @@
+% solutions_style.sty
+% Unified style for all exercise answer keys
+%
+% Course: 2302638 Advanced Quantum Chemistry
+% Institution: Department of Chemistry, Faculty of Science, Chulalongkorn University
+%
+% Usage: \usepackage{solutions_style}
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{solutions_style}[2026/01/11 Unified Answer Key Style]
+
+% =============================================================================
+% REQUIRED PACKAGES
+% =============================================================================
+\RequirePackage{amsmath,amssymb,amsthm}
+\RequirePackage{physics}
+\RequirePackage{bm}
+\RequirePackage{enumitem}
+\RequirePackage{booktabs}
+\RequirePackage{xcolor}
+\RequirePackage{tcolorbox}
+\RequirePackage{listings}
+\RequirePackage{hyperref}
+\RequirePackage[version=4]{mhchem}
+\RequirePackage{fancyhdr}
+
+% Load tcolorbox libraries
+\tcbuselibrary{skins,breakable}
+
+% =============================================================================
+% COLOR DEFINITIONS
+% =============================================================================
+% Primary colors for answer key styling
+\definecolor{solutionblue}{RGB}{0, 102, 153}
+\definecolor{warningred}{RGB}{180, 60, 60}
+\definecolor{keygreen}{RGB}{34, 120, 34}
+\definecolor{codegray}{RGB}{245, 245, 245}
+\definecolor{outputgreen}{RGB}{0, 100, 0}
+\definecolor{tipgold}{RGB}{180, 140, 20}
+% Legacy color names for backward compatibility
+\definecolor{secondaryred}{RGB}{178, 34, 34}
+\definecolor{primaryblue}{RGB}{0, 73, 135}
+\definecolor{tertiarygreen}{RGB}{34, 139, 34}
+\definecolor{insightpurple}{RGB}{102, 51, 153}
+
+% =============================================================================
+% CUSTOM TCOLORBOX ENVIRONMENTS
+% =============================================================================
+
+% Solution box for checkpoint and exercise answers
+\newtcolorbox{solutionbox}[1][Solution]{%
+    colback=solutionblue!5,
+    colframe=solutionblue,
+    title={#1},
+    fonttitle=\bfseries,
+    boxrule=1pt,
+    arc=2pt,
+    left=8pt,
+    right=8pt,
+    top=6pt,
+    bottom=6pt,
+    breakable,
+    before skip=1em,
+    after skip=1em
+}
+
+% Warning box for common errors
+\newtcolorbox{warningbox}[1][Common Error]{%
+    colback=warningred!5,
+    colframe=warningred,
+    title={\textbf{Warning:} #1},
+    fonttitle=\bfseries,
+    boxrule=1pt,
+    arc=2pt,
+    breakable
+}
+
+% Key formula box
+\newtcolorbox{keyformulabox}[1][Key Formula]{%
+    colback=keygreen!5,
+    colframe=keygreen,
+    title={#1},
+    fonttitle=\bfseries,
+    boxrule=1pt,
+    arc=2pt
+}
+
+% Expected output box
+\newtcolorbox{outputbox}[1][Expected Output]{%
+    colback=codegray,
+    colframe=gray!60,
+    title={#1},
+    fonttitle=\bfseries\ttfamily,
+    breakable
+}
+
+% Question box (for checkpoint reference)
+\newtcolorbox{questionbox}[1][Question]{%
+    colback=gray!5,
+    colframe=gray!60,
+    title={#1},
+    fonttitle=\bfseries\itshape,
+    boxrule=0.5pt,
+    arc=2pt
+}
+
+% Tip/hint box
+\newtcolorbox{tipbox}[1][Tip]{%
+    colback=tipgold!10,
+    colframe=tipgold,
+    title={#1},
+    fonttitle=\bfseries,
+    boxrule=1pt,
+    arc=2pt
+}
+
+% =============================================================================
+% CUSTOM COMMANDS - MATRIX NOTATION
+% =============================================================================
+\newcommand{\mat}[1]{\mathbf{#1}}
+\newcommand{\Smat}{\mat{S}}
+\newcommand{\Tmat}{\mat{T}}
+\newcommand{\Vmat}{\mat{V}}
+\newcommand{\Hcore}{\mat{h}}
+\newcommand{\Fmat}{\mat{F}}
+\newcommand{\Pmat}{\mat{P}}
+\newcommand{\Cmat}{\mat{C}}
+\newcommand{\Jmat}{\mat{J}}
+\newcommand{\Kmat}{\mat{K}}
+\newcommand{\Xmat}{\mat{X}}
+\newcommand{\Gmat}{\mat{G}}
+\newcommand{\Hmat}{\mat{H}}
+
+% Vector notation
+\newcommand{\rvec}{\mathbf{r}}
+\newcommand{\avec}{\mathbf{a}}
+\newcommand{\bvec}{\mathbf{b}}
+
+% Transpose and related
+\newcommand{\T}{^\top}
+\newcommand{\Tinv}{^{-\top}}
+
+% =============================================================================
+% CUSTOM COMMANDS - INTEGRAL NOTATION
+% =============================================================================
+% ERI in chemist's notation
+\newcommand{\eri}[4]{(#1#2|#3#4)}
+
+% Boys function
+\newcommand{\Boys}[1]{F_{#1}}
+
+% =============================================================================
+% CODE LISTING STYLE
+% =============================================================================
+\lstset{
+    language=Python,
+    basicstyle=\small\ttfamily,
+    backgroundcolor=\color{codegray},
+    frame=single,
+    frameround=tttt,
+    framesep=3pt,
+    breaklines=true,
+    breakatwhitespace=true,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    numbersep=8pt,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{green!50!black}\itshape,
+    stringstyle=\color{red!60!black},
+    showstringspaces=false,
+    tabsize=4,
+    captionpos=b,
+    morekeywords={np, numpy, scipy, pyscf, mol, mf, True, False, None}
+}
+
+% =============================================================================
+% HYPERREF SETUP
+% =============================================================================
+\hypersetup{
+    colorlinks=true,
+    linkcolor=solutionblue,
+    citecolor=solutionblue,
+    urlcolor=solutionblue,
+    pdfborder={0 0 0}
+}
+
+% =============================================================================
+% PAGE STYLE
+% =============================================================================
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\leftmark}
+\fancyhead[R]{\small 2302638 Answer Key}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+
+% =============================================================================
+% SECTION FORMATTING
+% =============================================================================
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{2}
+
+% =============================================================================
+% BACKWARD COMPATIBILITY ALIASES
+% =============================================================================
+% CamelCase aliases for Chapter 7 compatibility
+\newtcolorbox{solutionBox}[1][Solution]{%
+    colback=solutionblue!5,
+    colframe=solutionblue,
+    title={#1},
+    fonttitle=\bfseries,
+    boxrule=1pt,
+    arc=2pt,
+    left=8pt,
+    right=8pt,
+    top=6pt,
+    bottom=6pt,
+    breakable,
+    before skip=1em,
+    after skip=1em
+}
+
+\newtcolorbox{keyPointBox}[1][Key Point]{%
+    colback=keygreen!5,
+    colframe=keygreen,
+    title={#1},
+    fonttitle=\bfseries,
+    boxrule=1pt,
+    arc=2pt,
+    breakable
+}
+
+\newtcolorbox{questionBox}[1][Question]{%
+    colback=warningred!10,
+    colframe=warningred,
+    title={#1},
+    fonttitle=\bfseries,
+    boxrule=1pt,
+    arc=2pt,
+    before skip=0.8em,
+    after skip=0.8em
+}
+
+\newtcolorbox{labBox}[1][Lab Output]{%
+    colback=tipgold!10,
+    colframe=tipgold,
+    title={#1},
+    fonttitle=\bfseries\ttfamily,
+    boxrule=1pt,
+    arc=2pt,
+    breakable
+}
+
+% Additional command for big-O notation used in Chapter 7
+\providecommand{\bigO}[1]{\mathcal{O}(#1)}
+
+% Operator notation (for Fock operator, etc.)
+\providecommand{\Fop}{\hat{F}}
+\providecommand{\Hop}{\hat{H}}
+\providecommand{\Jop}{\hat{J}}
+\providecommand{\Kop}{\hat{K}}
+
+% =============================================================================
+% CHAPTER 4 COMPATIBILITY ENVIRONMENTS
+% =============================================================================
+\newtcolorbox{physicalinsightbox}[1][Physical Insight]{%
+    colback=insightpurple!5,
+    colframe=insightpurple,
+    title={#1},
+    fonttitle=\bfseries,
+    boxrule=1pt,
+    arc=2pt,
+    breakable
+}
+
+% =============================================================================
+% CHAPTER 6 COMPATIBILITY ENVIRONMENTS
+% =============================================================================
+\newtcolorbox{checkpointAnswer}[1][Checkpoint Answer]{%
+    colback=solutionblue!5,
+    colframe=solutionblue,
+    title={#1},
+    fonttitle=\bfseries,
+    boxrule=1pt,
+    arc=2pt,
+    left=8pt,
+    right=8pt,
+    top=6pt,
+    bottom=6pt,
+    breakable,
+    before skip=1em,
+    after skip=1em
+}
+
+\newtcolorbox{labAnswer}[1][Lab Answer]{%
+    colback=keygreen!5,
+    colframe=keygreen,
+    title={#1},
+    fonttitle=\bfseries,
+    boxrule=1pt,
+    arc=2pt,
+    breakable
+}
+
+\newtcolorbox{keyInsight}[1][Key Insight]{%
+    colback=tipgold!10,
+    colframe=tipgold,
+    title={#1},
+    fonttitle=\bfseries,
+    boxrule=1pt,
+    arc=2pt,
+    breakable
+}
+
+% =============================================================================
+% PYTHON LISTING STYLE (named style for lstlisting)
+% =============================================================================
+\lstdefinestyle{python}{
+    language=Python,
+    basicstyle=\small\ttfamily,
+    backgroundcolor=\color{codegray},
+    frame=single,
+    frameround=tttt,
+    framesep=3pt,
+    breaklines=true,
+    breakatwhitespace=true,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    numbersep=8pt,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{green!50!black}\itshape,
+    stringstyle=\color{red!60!black},
+    showstringspaces=false,
+    tabsize=4,
+    captionpos=b,
+    morekeywords={np, numpy, scipy, pyscf, mol, mf, True, False, None}
+}
+
+\endinput

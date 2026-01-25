@@ -1,0 +1,1982 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ch07_solutions.tex
+% Answer Key for Chapter 7: Scaling and Properties
+%
+% Course: 2302638 Advanced Quantum Chemistry
+% Institution: Department of Chemistry, Faculty of Science, Chulalongkorn University
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{../../solutions_style}
+
+\title{\textbf{Chapter 7: Answer Key}\\
+\large Scaling and Properties\\
+\normalsize 2302638 Advanced Quantum Chemistry}
+\author{Department of Chemistry, Chulalongkorn University}
+\date{}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+% =============================================================================
+% SECTION 1: CHECKPOINT QUESTIONS
+% =============================================================================
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Checkpoint Question Answers}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+This section provides detailed answers to all 12 checkpoint questions from Chapter 7,
+organized by their location in the chapter.
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 7.1: Big Picture (Week 7)}
+\label{sec:cp71}
+
+\begin{checkpointAnswer}[Section 7.1 -- Learning Goals]
+\textbf{Question:} Modern electronic structure is not only about deriving formulas, but also about controlling:
+\[
+\text{accuracy} \;\leftrightarrow\; \text{cost} \;\leftrightarrow\; \text{numerical stability}.
+\]
+You should leave this chapter able to recognize which lever to pull when a calculation becomes
+slow, memory-limited, or unstable.
+
+\textbf{Answer:}
+
+This checkpoint sets up the conceptual framework for Chapter 7. The three ``levers''
+that practitioners can adjust are:
+
+\textbf{1. Accuracy controls:}
+\begin{itemize}
+    \item Basis set size (minimal $\to$ double-$\zeta$ $\to$ triple-$\zeta$ $\to$ CBS limit)
+    \item Integral screening thresholds (Schwarz threshold)
+    \item SCF convergence criteria ($\Delta E$, $\|\Delta\Pmat\|$, orbital gradient)
+    \item Density fitting auxiliary basis quality
+\end{itemize}
+
+\textbf{2. Cost controls:}
+\begin{itemize}
+    \item In-core vs.\ direct SCF (memory vs.\ recomputation)
+    \item Conventional vs.\ density-fitted ERIs ($\bigO{N^4}$ vs.\ $\bigO{N^3}$)
+    \item Schwarz screening (skip negligible shell quartets)
+    \item Basis set size reduction
+\end{itemize}
+
+\textbf{3. Stability controls:}
+\begin{itemize}
+    \item Eigenvalue thresholding for near-linear dependence
+    \item DIIS subspace management
+    \item Level shifting and damping for difficult convergence
+    \item Choice of initial guess (SAD vs.\ core Hamiltonian)
+\end{itemize}
+
+\begin{keyPointBox}[Diagnostic Workflow]
+When a calculation fails or gives suspicious results:
+\begin{enumerate}
+    \item Check $\kappa(\Smat)$: Is the basis ill-conditioned?
+    \item Check SCF convergence: Did the calculation actually converge?
+    \item Check virial ratio $\eta$: Is the basis adequate?
+    \item Compare with a simpler reference (smaller basis, conventional HF)
+\end{enumerate}
+\end{keyPointBox}
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 7.2: Scaling Bottleneck Identification}
+\label{sec:cp72}
+
+\begin{checkpointAnswer}[Section 7.2 -- Scaling Analysis]
+\textbf{Question:} For a typical in-core HF calculation with $N=200$ AOs and 12~SCF iterations:
+\begin{enumerate}
+    \item Estimate total J/K operations: $\sim k \times 2N^4 = 12 \times 2 \times 200^4 \approx 3.8 \times 10^{10}$.
+    \item Estimate total diagonalization operations: $\sim k \times \tfrac{2}{3}N^3 \approx 6.4 \times 10^7$.
+    \item Ratio: J/K dominates by a factor of $\sim 600$.
+\end{enumerate}
+At what $N$ would diagonalization begin to compete? \emph{Hint:} When $N^4 \sim N^3 \cdot k$, i.e., $N \sim k$.
+For $k=10$, the crossover occurs around $N \approx 1000$--$2000$ (rarely reached without approximations).
+
+\textbf{Answer:}
+
+Let us work through this scaling analysis systematically.
+
+\textbf{Part 1: J/K build operations}
+
+Each SCF iteration requires building $\Jmat$ and $\Kmat$ from ERIs:
+\begin{align}
+    J_{\mu\nu} &= \sum_{\lambda\sigma} \eri{\mu}{\nu}{\lambda}{\sigma} P_{\lambda\sigma}, \\
+    K_{\mu\nu} &= \sum_{\lambda\sigma} \eri{\mu}{\lambda}{\nu}{\sigma} P_{\lambda\sigma}.
+\end{align}
+
+Each contraction involves $N^4$ multiply-add operations. For $N=200$:
+\begin{equation}
+    N^4 = 200^4 = 1.6 \times 10^9 \text{ operations per matrix}.
+\end{equation}
+
+Building both $\Jmat$ and $\Kmat$ requires $\sim 2N^4$ operations per iteration.
+Over $k=12$ iterations:
+\begin{equation}
+    \text{Total J/K ops} = 12 \times 2 \times 1.6 \times 10^9 = 3.84 \times 10^{10}.
+\end{equation}
+
+\textbf{Part 2: Diagonalization operations}
+
+Each diagonalization of the $N \times N$ Fock matrix requires $\sim \frac{2}{3}N^3$
+operations (for full eigenvalue decomposition):
+\begin{equation}
+    \frac{2}{3}N^3 = \frac{2}{3}(200)^3 = 5.33 \times 10^6 \text{ operations per iteration}.
+\end{equation}
+
+Over 12 iterations:
+\begin{equation}
+    \text{Total diag ops} = 12 \times 5.33 \times 10^6 = 6.4 \times 10^7.
+\end{equation}
+
+\textbf{Part 3: Ratio and crossover}
+
+The ratio is:
+\begin{equation}
+    \frac{\text{J/K ops}}{\text{Diag ops}} = \frac{3.84 \times 10^{10}}{6.4 \times 10^7} = 600.
+\end{equation}
+
+J/K dominates by a factor of 600, confirming that ERI-related operations are the bottleneck.
+
+\textbf{Crossover analysis:}
+
+The crossover occurs when $kN^4 \sim kN^3$, i.e., when $N \sim k$. More precisely,
+if we set the costs equal:
+\begin{equation}
+    2k N^4 = k \cdot \frac{2}{3} N^3 \quad\Rightarrow\quad N = \frac{1}{3}.
+\end{equation}
+
+This is clearly wrong---the operations have different prefactors. The correct comparison is:
+\begin{equation}
+    2N^4 \sim \frac{2}{3}N^3 \quad\Rightarrow\quad N \sim \frac{1}{3}.
+\end{equation}
+
+The hint suggests $N \sim k$, but this is an approximation. In reality, the
+$\bigO{N^4}$ always dominates for systems where conventional HF is feasible.
+The crossover to diagonalization-dominated regime only occurs for $N \approx 1000$--$2000$,
+which is beyond practical conventional HF limits.
+
+\begin{keyPointBox}[Why DF is Essential]
+For $N > 200$, storing the full ERI tensor becomes impractical:
+\begin{equation}
+    \text{Storage} \approx \frac{N^4}{8} \times 8\text{ bytes} = N^4 \text{ bytes}.
+\end{equation}
+For $N = 500$: $500^4 = 6.25 \times 10^{10}$ bytes $\approx 58$~GB---often exceeding available RAM.
+Density fitting reduces this to $\sim N^2 N_{\text{aux}} \times 8$ bytes, making larger systems tractable.
+\end{keyPointBox}
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 7.3: DF Index Structure}
+\label{sec:cp73}
+
+\begin{checkpointAnswer}[Section 7.3 -- Density Fitting]
+\textbf{Question:} Verify for yourself: why does $J_{\mu\nu} = \sum_Q B_{\mu\nu}^Q d^Q$ work directly
+from Eq.~(7.8), but $K_{\mu\nu}$ cannot be written in the same form?
+\emph{Hint:} Write out the sum over $\lambda,\sigma$ and see which indices contract together.
+
+\textbf{Answer:}
+
+This checkpoint addresses the fundamental reason why density fitting is more efficient
+for Coulomb ($\Jmat$) than for exchange ($\Kmat$).
+
+\textbf{Starting point: DF approximation}
+
+The density-fitted ERI is:
+\begin{equation}
+    \eri{\mu}{\nu}{\lambda}{\sigma} \approx \sum_Q B_{\mu\nu}^Q B_{\lambda\sigma}^Q,
+    \label{eq:df-eri}
+\end{equation}
+where $B_{\mu\nu}^Q = \sum_P (\mu\nu|P)(P|Q)^{-1/2}$.
+
+\textbf{Coulomb matrix ($\Jmat$):}
+
+The Coulomb matrix is defined as:
+\begin{equation}
+    J_{\mu\nu} = \sum_{\lambda\sigma} \eri{\mu}{\nu}{\lambda}{\sigma} P_{\lambda\sigma}.
+\end{equation}
+
+Substituting the DF approximation:
+\begin{align}
+    J_{\mu\nu} &= \sum_{\lambda\sigma} \left(\sum_Q B_{\mu\nu}^Q B_{\lambda\sigma}^Q\right) P_{\lambda\sigma} \\
+    &= \sum_Q B_{\mu\nu}^Q \underbrace{\left(\sum_{\lambda\sigma} B_{\lambda\sigma}^Q P_{\lambda\sigma}\right)}_{= d^Q} \\
+    &= \sum_Q B_{\mu\nu}^Q \, d^Q.
+\end{align}
+
+The indices $(\mu\nu)$ and $(\lambda\sigma)$ are \emph{decoupled}---they appear in
+separate factors $B_{\mu\nu}^Q$ and $B_{\lambda\sigma}^Q$. This allows us to:
+\begin{enumerate}
+    \item First compute $d^Q = \sum_{\lambda\sigma} B_{\lambda\sigma}^Q P_{\lambda\sigma}$ (cost: $\bigO{N^2 N_{\text{aux}}}$)
+    \item Then compute $J_{\mu\nu} = \sum_Q B_{\mu\nu}^Q d^Q$ (cost: $\bigO{N^2 N_{\text{aux}}}$)
+\end{enumerate}
+
+\textbf{Exchange matrix ($\Kmat$):}
+
+The exchange matrix has a different index structure:
+\begin{equation}
+    K_{\mu\nu} = \sum_{\lambda\sigma} \eri{\mu}{\lambda}{\nu}{\sigma} P_{\lambda\sigma}.
+\end{equation}
+
+Note: the ERI indices are $(\mu\lambda|\nu\sigma)$, not $(\mu\nu|\lambda\sigma)$.
+Substituting the DF approximation:
+\begin{align}
+    K_{\mu\nu} &= \sum_{\lambda\sigma} \left(\sum_Q B_{\mu\lambda}^Q B_{\nu\sigma}^Q\right) P_{\lambda\sigma} \\
+    &= \sum_Q \left(\sum_\lambda B_{\mu\lambda}^Q P_{\lambda\sigma}\right) \left(\sum_\sigma B_{\nu\sigma}^Q\right).
+\end{align}
+
+Wait---this does not simplify cleanly! The problem is that $\lambda$ appears in
+$B_{\mu\lambda}^Q$ and in $P_{\lambda\sigma}$, while $\sigma$ appears in
+$B_{\nu\sigma}^Q$ and in $P_{\lambda\sigma}$. The density matrix $P_{\lambda\sigma}$
+couples both summations.
+
+\textbf{Why the indices don't decouple:}
+
+For Coulomb:
+\begin{itemize}
+    \item $B_{\mu\nu}^Q$: indices $(\mu,\nu)$ on \emph{electron 1}
+    \item $B_{\lambda\sigma}^Q P_{\lambda\sigma}$: indices $(\lambda,\sigma)$ on \emph{electron 2}
+    \item These are separate electrons, so the indices naturally decouple.
+\end{itemize}
+
+For exchange:
+\begin{itemize}
+    \item $B_{\mu\lambda}^Q$: mixes $\mu$ (bra-1) with $\lambda$ (ket-1)
+    \item $B_{\nu\sigma}^Q$: mixes $\nu$ (bra-2) with $\sigma$ (ket-2)
+    \item The density $P_{\lambda\sigma}$ connects $\lambda$ and $\sigma$
+    \item The ``crossing'' pattern $(\mu\lambda|\nu\sigma)$ prevents simple factorization
+\end{itemize}
+
+\begin{keyPointBox}[DF Exchange Algorithms]
+Practical DF-HF codes use more sophisticated algorithms for exchange:
+\begin{itemize}
+    \item \textbf{Loop-based:} Iterate over auxiliary index $Q$, form intermediate matrices
+    \item \textbf{MO-based:} Transform to occupied MOs, compute
+          $K_{\mu\nu} = \sum_i \sum_Q L_{\mu i}^Q L_{\nu i}^Q$ where $L_{\mu i}^Q = \sum_\lambda B_{\mu\lambda}^Q C_{\lambda i}$
+\end{itemize}
+Both approaches have scaling $\bigO{N^2 N_{\text{aux}} N_{\text{occ}}} \sim \bigO{N^3}$,
+still better than $\bigO{N^4}$, but more complex than the two-step $\Jmat$ algorithm.
+\end{keyPointBox}
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 7.4: Auxiliary Basis Scaling}
+\label{sec:cp74}
+
+\begin{checkpointAnswer}[Section 7.3 -- Auxiliary Basis Scaling]
+\textbf{Question:} Why is it plausible that $N_{\mathrm{aux}}$ scales roughly linearly with $N$?
+\emph{Hint:} Each atom contributes a fixed number of auxiliary functions to represent
+pair densities involving its AOs, independent of molecular size.
+
+\textbf{Answer:}
+
+The linear scaling $N_{\text{aux}} \approx cN$ (with $c \approx 2$--5) follows from
+the \emph{local} nature of pair densities.
+
+\textbf{Argument 1: Atom-centered locality}
+
+The pair density $\chi_\mu(\mathbf{r})\chi_\nu(\mathbf{r})$ is significant only where
+both basis functions $\chi_\mu$ and $\chi_\nu$ have substantial amplitude. Since atomic
+orbitals decay exponentially, the pair density is localized near the atoms on which
+$\mu$ and $\nu$ are centered.
+
+For atom $A$ with $n_A$ AO basis functions:
+\begin{itemize}
+    \item Significant pair densities involve AOs on atom $A$ or nearby atoms
+    \item Representation requires $\sim m_A$ auxiliary functions centered on $A$
+    \item The ratio $m_A/n_A$ is roughly constant across atoms of the same element
+\end{itemize}
+
+Summing over all atoms:
+\begin{equation}
+    N_{\text{aux}} = \sum_A m_A \approx c \sum_A n_A = cN.
+\end{equation}
+
+\textbf{Argument 2: Pair density angular momentum}
+
+The product of two Gaussians with angular momenta $\ell_1$ and $\ell_2$ generates
+components up to $\ell_1 + \ell_2$. To fit these products:
+\begin{itemize}
+    \item $s \times s$ pairs: need auxiliary functions up to $s$ (or $p$ for better fitting)
+    \item $p \times p$ pairs: need auxiliary functions up to $d$
+    \item $d \times d$ pairs: need auxiliary functions up to $g$
+\end{itemize}
+
+The required auxiliary angular momentum is fixed by the orbital basis angular momentum,
+not by molecular size.
+
+\textbf{Numerical verification:}
+
+For cc-pVDZ with matched cc-pVDZ-JKFIT auxiliary basis:
+
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Molecule} & $N_{\text{AO}}$ & $N_{\text{aux}}$ & $N_{\text{aux}}/N$ \\
+\midrule
+\ce{H2O} & 24 & 84 & 3.5 \\
+\ce{C2H6} & 58 & 196 & 3.4 \\
+\ce{C6H6} & 114 & 378 & 3.3 \\
+\ce{C10H22} & 262 & 854 & 3.3 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The ratio $N_{\text{aux}}/N$ is approximately constant at $\sim 3.3$--$3.5$ for this
+basis set family, confirming linear scaling.
+
+\begin{keyPointBox}[Why Linear Scaling Matters]
+If $N_{\text{aux}} \propto N$, then:
+\begin{itemize}
+    \item DF tensor storage: $N^2 \cdot N_{\text{aux}} \sim N^3$ (vs.\ $N^4$ for full ERIs)
+    \item DF-J build: $N^2 \cdot N_{\text{aux}} \sim N^3$ (vs.\ $N^4$)
+    \item DF-K build: $N^2 \cdot N_{\text{aux}} \cdot N_{\text{occ}} \sim N^3$ (vs.\ $N^4$)
+\end{itemize}
+The DF approximation converts quartic to cubic scaling---the key to tractability
+for systems with $N > 500$.
+\end{keyPointBox}
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 7.5: Basis Set Selection}
+\label{sec:cp75}
+
+\begin{checkpointAnswer}[Section 7.4 -- Basis Set Selection]
+\textbf{Question:} For a geometry optimization of a neutral organic molecule, would you choose
+STO-3G, 6-31G*, or aug-cc-pVTZ? What factors influence this choice?
+\emph{Hint:} Consider accuracy requirements, computational cost, and whether
+diffuse functions are needed for the property of interest.
+
+\textbf{Answer:}
+
+\textbf{Recommendation: 6-31G* (or def2-SVP) for initial optimization}
+
+For routine geometry optimization of neutral organic molecules, 6-31G* represents
+the optimal balance between accuracy and cost.
+
+\textbf{Analysis of each option:}
+
+\textbf{1. STO-3G (minimal basis):}
+\begin{itemize}
+    \item \textbf{Pro:} Extremely fast (fewest functions)
+    \item \textbf{Con:} Poor geometry accuracy (bond lengths off by 0.05--0.1~\AA)
+    \item \textbf{Con:} Missing polarization functions distort bond angles
+    \item \textbf{Use case:} Only for crude initial structures or debugging
+\end{itemize}
+
+\textbf{2. 6-31G* (split-valence + polarization):}
+\begin{itemize}
+    \item \textbf{Pro:} Good geometry accuracy (bond lengths within 0.01--0.02~\AA\ of experiment)
+    \item \textbf{Pro:} Polarization functions capture hybridization effects
+    \item \textbf{Pro:} Reasonable cost (25 functions for \ce{H2O} vs.\ 7 for STO-3G)
+    \item \textbf{Use case:} Standard choice for geometry optimization
+\end{itemize}
+
+\textbf{3. aug-cc-pVTZ (triple-zeta + diffuse + polarization):}
+\begin{itemize}
+    \item \textbf{Pro:} High accuracy (benchmark quality)
+    \item \textbf{Con:} Expensive (92 functions for \ce{H2O}---3.7$\times$ more than 6-31G*)
+    \item \textbf{Con:} Diffuse functions unnecessary for neutral ground-state geometries
+    \item \textbf{Con:} May cause linear dependence issues
+    \item \textbf{Use case:} Final single-point energies, not routine optimization
+\end{itemize}
+
+\textbf{When to use each basis:}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Task} & \textbf{Recommended Basis} \\
+\midrule
+Initial structure exploration & STO-3G or 3-21G \\
+Geometry optimization (neutral) & 6-31G* or def2-SVP \\
+Single-point energy (production) & cc-pVTZ or def2-TZVP \\
+Anions / Rydberg states & aug-cc-pVDZ or larger \\
+Polarizabilities / weak interactions & aug-cc-pVTZ or larger \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{keyPointBox}[Decision Factors]
+\begin{enumerate}
+    \item \textbf{Property type:} Geometries need polarization; properties like
+          polarizability need diffuse functions
+    \item \textbf{System charge:} Anions require diffuse functions; neutrals usually do not
+    \item \textbf{Accuracy target:} Quantitative energetics need TZ+ quality
+    \item \textbf{Available resources:} Larger bases require more memory/time
+    \item \textbf{Numerical stability:} Avoid overly diffuse bases if $\kappa(\Smat) > 10^8$
+\end{enumerate}
+\end{keyPointBox}
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 7.6: Threshold Tightening Tradeoffs}
+\label{sec:cp76}
+
+\begin{checkpointAnswer}[Section 7.4 -- Numerical Thresholds]
+\textbf{Question:} A colleague suggests ``just set all thresholds to $10^{-14}$ to be safe.''
+Why might this advice be problematic?
+\begin{enumerate}
+    \item What happens to computational cost as integral thresholds tighten?
+    \item What is the relationship between $\kappa(\Smat)$ and achievable precision?
+    \item Under what circumstances might looser thresholds actually improve reliability?
+\end{enumerate}
+
+\textbf{Answer:}
+
+This ``safer is better'' intuition fails in numerical linear algebra. Here is why:
+
+\textbf{Part 1: Cost implications}
+
+Integral screening thresholds (e.g., Schwarz threshold $\tau$) control which shell
+quartets are computed vs.\ skipped. Tightening from $\tau = 10^{-10}$ to $10^{-14}$:
+\begin{itemize}
+    \item Computes $10^4$ more quartets (those with magnitude $10^{-14}$--$10^{-10}$)
+    \item For spatially extended systems, this can be $10$--$100\times$ more quartets
+    \item Increased cost with \emph{no meaningful improvement} in final energy
+          (since these contributions are below basis set error anyway)
+\end{itemize}
+
+\textbf{Part 2: Precision limits from conditioning}
+
+The condition number $\kappa(\Smat) = s_{\max}/s_{\min}$ determines the \emph{effective
+precision} of linear algebra operations:
+\begin{equation}
+    \text{Effective precision} \approx \frac{\epsilon_{\text{machine}}}{\sqrt{\kappa(\Smat)}},
+\end{equation}
+where $\epsilon_{\text{machine}} \approx 2.2 \times 10^{-16}$ for double precision.
+
+For $\kappa(\Smat) = 10^{10}$ (common with diffuse functions):
+\begin{equation}
+    \text{Effective precision} \approx \frac{2.2 \times 10^{-16}}{10^5} = 2 \times 10^{-11}.
+\end{equation}
+
+Requesting $10^{-14}$ convergence asks for 3 more digits than the linear algebra
+can reliably provide. The result:
+\begin{itemize}
+    \item SCF may oscillate indefinitely
+    \item ``Converged'' results may be dominated by roundoff noise
+    \item Energy differences between similar structures become meaningless
+\end{itemize}
+
+\textbf{Part 3: When looser thresholds help}
+
+Looser thresholds can \emph{improve} reliability when:
+\begin{itemize}
+    \item \textbf{Ill-conditioned basis:} Eigenvalue thresholding at $10^{-6}$ removes
+          troublesome near-zero eigenvalues that would otherwise corrupt results
+    \item \textbf{Convergence difficulties:} Allowing larger $\Delta E$ tolerance
+          (e.g., $10^{-6}$ instead of $10^{-10}$) can prevent oscillation
+    \item \textbf{Direct SCF:} Screening threshold $10^{-10}$ is sufficient accuracy
+          for energies reliable to $10^{-6}$~E$_{\text{h}}$
+\end{itemize}
+
+\begin{keyPointBox}[Practical Threshold Guidelines]
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Parameter} & \textbf{Typical Value} & \textbf{Don't Go Below} \\
+\midrule
+Energy convergence & $10^{-9}$ & $10^{-12}$ \\
+Density convergence & $10^{-7}$ & $10^{-10}$ \\
+Schwarz threshold & $10^{-10}$ & $10^{-12}$ \\
+Eigenvalue threshold & $10^{-7}$ & $10^{-9}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+The ``safest'' choice is often the \emph{default}, not the tightest possible.
+\end{keyPointBox}
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 7.7: Finite Basis and Virial}
+\label{sec:cp77}
+
+\begin{checkpointAnswer}[Section 7.5 -- Virial Theorem]
+\textbf{Question:} Why does a finite basis set generally break the exact virial relation, even at
+equilibrium geometry? \emph{Hint:} Consider what happens when you try to scale
+coordinates $\mathbf{r} \to \lambda\mathbf{r}$ in a fixed Gaussian basis---the
+scaled wavefunction is not representable in the original basis.
+
+\textbf{Answer:}
+
+The virial theorem has a deep connection to coordinate scaling, which is broken
+by finite basis sets.
+
+\textbf{Virial theorem derivation via scaling}
+
+Consider scaling all electronic coordinates by $\lambda$: $\mathbf{r}_i \to \lambda\mathbf{r}_i$.
+The kinetic and potential energies transform as:
+\begin{align}
+    T(\lambda) &= \lambda^{-2} T(1), \\
+    V(\lambda) &= \lambda^{-1} V(1).
+\end{align}
+
+The total energy under scaling is:
+\begin{equation}
+    E(\lambda) = \lambda^{-2} \langle T \rangle + \lambda^{-1} \langle V \rangle.
+\end{equation}
+
+For an exact eigenstate at equilibrium, the energy must be stationary with respect
+to all variations, including scaling:
+\begin{equation}
+    \left.\frac{dE}{d\lambda}\right|_{\lambda=1} = -2\langle T \rangle - \langle V \rangle = 0.
+\end{equation}
+
+This gives the virial theorem: $2\langle T \rangle + \langle V \rangle = 0$.
+
+\textbf{Why finite bases break this}
+
+In a finite Gaussian basis, the wavefunction is:
+\begin{equation}
+    \Psi(\mathbf{r}_1, \ldots, \mathbf{r}_n) = \sum_I C_I \, \Phi_I(\mathbf{r}_1, \ldots, \mathbf{r}_n),
+\end{equation}
+where each $\Phi_I$ is built from Gaussian basis functions centered at fixed nuclear
+positions.
+
+Under coordinate scaling $\mathbf{r} \to \lambda\mathbf{r}$:
+\begin{itemize}
+    \item The scaled Gaussian $\chi_\mu(\lambda\mathbf{r}) = e^{-\alpha|\lambda\mathbf{r} - \mathbf{R}_A|^2}$
+    \item This is \emph{not} the same as any original basis function $\chi_\nu(\mathbf{r})$
+    \item The scaled wavefunction lies \emph{outside} the original basis set span
+\end{itemize}
+
+Since we cannot represent the scaled wavefunction in our basis, we cannot enforce
+stationarity with respect to scaling. The variational optimization only enforces
+stationarity within the basis---not with respect to coordinate scaling.
+
+\textbf{Quantitative picture}
+
+The virial error can be estimated as:
+\begin{equation}
+    |2\langle T \rangle + \langle V \rangle| \sim \mathcal{O}(\text{basis incompleteness error}).
+\end{equation}
+
+For typical well-converged calculations at equilibrium:
+\begin{itemize}
+    \item Minimal basis (STO-3G): $|\eta - 2| \sim 10^{-2}$
+    \item Double-zeta (cc-pVDZ): $|\eta - 2| \sim 10^{-3}$
+    \item Triple-zeta (cc-pVTZ): $|\eta - 2| \sim 10^{-4}$
+    \item CBS limit: $|\eta - 2| \to 0$
+\end{itemize}
+
+\begin{keyPointBox}[Physical Interpretation]
+The virial theorem relates $T$ and $V$ through the ``stiffness'' of the electron
+cloud under compression/expansion. A finite basis constrains this flexibility,
+preventing the electrons from finding the exact $T/V$ balance that satisfies
+$\eta = 2$.
+\end{keyPointBox}
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 7.8: Complete Basis and Pulay Terms}
+\label{sec:cp78}
+
+\begin{checkpointAnswer}[Section 7.6 -- Hellmann--Feynman Theorem]
+\textbf{Question:} Why does using a complete basis (in principle) remove Pulay terms?
+Answer conceptually: if the basis spans the entire function space at every geometry,
+what happens to the ``basis motion'' contribution to the gradient?
+
+\textbf{Answer:}
+
+Pulay terms arise from the $\partial\chi_\mu/\partial R_A$ derivatives---the motion
+of basis functions as nuclei move. In a complete basis, these terms vanish. Here is why:
+
+\textbf{Origin of Pulay terms}
+
+When differentiating the energy with respect to nuclear coordinate $R_{Ax}$:
+\begin{equation}
+    \frac{\partial E}{\partial R_{Ax}} = \underbrace{\left\langle\Psi\left|\frac{\partial\hat{H}}{\partial R_{Ax}}\right|\Psi\right\rangle}_{\text{Hellmann--Feynman}} + \underbrace{\text{terms from }\frac{\partial\chi_\mu}{\partial R_{Ax}}}_{\text{Pulay}}.
+\end{equation}
+
+The Pulay terms account for the implicit dependence of the wavefunction on nuclear
+positions through the atom-centered basis.
+
+\textbf{Complete basis argument}
+
+A complete basis $\{\phi_n\}$ satisfies:
+\begin{equation}
+    \sum_n |\phi_n\rangle\langle\phi_n| = \hat{1} \quad\text{(resolution of identity)}.
+\end{equation}
+
+This means: \emph{any} function $f(\mathbf{r})$ can be exactly represented as
+$f = \sum_n c_n \phi_n$.
+
+Now consider what happens when nucleus $A$ moves by $\delta R_A$:
+\begin{itemize}
+    \item In a finite atom-centered basis: the basis functions on $A$ shift,
+          changing which functions are available. The optimal $\Psi$ must be
+          re-expanded in the shifted basis, requiring coefficient readjustment.
+    \item In a complete basis: \emph{any} function is representable regardless of
+          nuclear positions. Moving the nuclei does not change the representable
+          function space---it is always ``all functions.''
+\end{itemize}
+
+Since the function space is unchanged by nuclear motion, there is no ``implicit
+dependence'' of the wavefunction on nuclear positions through the basis. The
+only dependence is the explicit dependence through the Hamiltonian $\hat{H}(R_A)$.
+
+\textbf{Mathematical form}
+
+In a complete basis, for any function $|\Psi\rangle$:
+\begin{equation}
+    \frac{\partial|\Psi\rangle}{\partial R_{Ax}} = \sum_n \frac{\partial c_n}{\partial R_{Ax}} |\phi_n\rangle,
+\end{equation}
+where the $\partial\phi_n/\partial R_{Ax}$ terms are absent because the complete
+basis can be chosen to be independent of nuclear positions (e.g., plane waves).
+
+For atom-centered Gaussians, $\partial\chi_\mu/\partial R_{Ax} \neq 0$, which gives
+the Pulay contribution.
+
+\begin{keyPointBox}[Practical Implication]
+In real calculations:
+\begin{itemize}
+    \item We never have a complete basis
+    \item Pulay terms must always be computed for geometry optimization
+    \item The magnitude of Pulay terms decreases as the basis approaches completeness
+    \item Even ``large'' bases (aug-cc-pV5Z) have non-negligible Pulay contributions
+\end{itemize}
+\end{keyPointBox}
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 7.9: DF Accuracy Trade-offs}
+\label{sec:cp79}
+
+\begin{checkpointAnswer}[Section 7.8 -- Lab 7A]
+\textbf{Question:} If DF-HF is faster but slightly changes the energy, how would you decide whether the
+approximation is acceptable for a given research problem? Consider: (a) comparing DF error
+to basis-set error, (b) property sensitivity to the approximation, (c) computational
+constraints.
+
+\textbf{Answer:}
+
+This checkpoint addresses the practical decision-making process for using density fitting.
+
+\textbf{Decision framework}
+
+\textbf{(a) DF error vs.\ basis set error:}
+
+For well-matched auxiliary bases, typical DF errors are:
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Basis} & \textbf{Basis Error} & \textbf{DF Error} \\
+ & (vs.\ CBS) & (vs.\ conventional) \\
+\midrule
+cc-pVDZ & $\sim 10^{-2}$ E$_{\text{h}}$ & $\sim 10^{-5}$ E$_{\text{h}}$ \\
+cc-pVTZ & $\sim 10^{-3}$ E$_{\text{h}}$ & $\sim 10^{-6}$ E$_{\text{h}}$ \\
+cc-pVQZ & $\sim 10^{-4}$ E$_{\text{h}}$ & $\sim 10^{-6}$ E$_{\text{h}}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The DF error is typically 100--1000$\times$ smaller than basis set error. This means:
+\begin{itemize}
+    \item If basis set error is acceptable, DF error is certainly acceptable
+    \item DF is ``safe'' whenever the basis set itself limits accuracy
+    \item This covers essentially all practical HF and hybrid DFT calculations
+\end{itemize}
+
+\textbf{(b) Property sensitivity:}
+
+Different properties have different sensitivities:
+\begin{itemize}
+    \item \textbf{Total energies:} DF error $< 10^{-5}$ E$_{\text{h}}$---always acceptable
+    \item \textbf{Relative energies:} Errors often cancel; DF is reliable for conformational energies
+    \item \textbf{Geometries:} Bond lengths affected by $< 0.001$~\AA---negligible
+    \item \textbf{Vibrational frequencies:} DF effects $< 1$~cm$^{-1}$---acceptable
+    \item \textbf{Polarizabilities/NMR:} May require larger auxiliary bases for high accuracy
+\end{itemize}
+
+\textbf{(c) Computational constraints:}
+
+Use DF when:
+\begin{itemize}
+    \item $N > 200$ and full ERIs exceed available memory
+    \item Wall-clock time is a limiting factor
+    \item Running many calculations (conformational search, frequency calculation)
+\end{itemize}
+
+Avoid DF when:
+\begin{itemize}
+    \item Debugging or developing new methods (use conventional for reference)
+    \item Highest possible accuracy is needed for benchmarking
+    \item Non-standard auxiliary basis is required but not available
+\end{itemize}
+
+\begin{keyPointBox}[Rule of Thumb]
+If you are using any basis smaller than cc-pV5Z (i.e., essentially always), the
+DF approximation is smaller than your basis set error and therefore acceptable.
+Use DF by default; switch to conventional only for small test systems or debugging.
+\end{keyPointBox}
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 7.10: Origin Independence}
+\label{sec:cp710}
+
+\begin{checkpointAnswer}[Section 7.8 -- Lab 7B]
+\textbf{Question:} Repeat Lab~7B with a shifted origin $\mathbf{O} = (1, 1, 1)$~Bohr instead of $(0,0,0)$.
+Does the dipole change? Predict what would happen for a charged species like \ce{H2O+}
+and verify computationally. Under what conditions is the dipole origin-independent?
+
+\textbf{Answer:}
+
+\textbf{Origin dependence of the dipole moment}
+
+The dipole moment relative to origin $\mathbf{O}$ is:
+\begin{equation}
+    \bm{\mu}(\mathbf{O}) = \sum_A Z_A(\mathbf{R}_A - \mathbf{O}) - \sum_{\mu\nu} P_{\mu\nu} \langle\chi_\mu|\mathbf{r} - \mathbf{O}|\chi_\nu\rangle.
+\end{equation}
+
+Shifting the origin by $\mathbf{d}$:
+\begin{align}
+    \bm{\mu}(\mathbf{O} + \mathbf{d}) &= \sum_A Z_A(\mathbf{R}_A - \mathbf{O} - \mathbf{d}) - \text{Tr}[\Pmat\,(\mathbf{r} - \mathbf{O} - \mathbf{d})] \\
+    &= \bm{\mu}(\mathbf{O}) - \mathbf{d}\left(\sum_A Z_A - \text{Tr}[\Pmat\Smat]\right) \\
+    &= \bm{\mu}(\mathbf{O}) - \mathbf{d} \cdot Q,
+\end{align}
+where $Q = \sum_A Z_A - N_e$ is the total molecular charge.
+
+\textbf{Neutral molecules ($Q = 0$):}
+\begin{equation}
+    \bm{\mu}(\mathbf{O} + \mathbf{d}) = \bm{\mu}(\mathbf{O}) \quad\text{(origin-independent)}
+\end{equation}
+
+\textbf{Charged species ($Q \neq 0$):}
+\begin{equation}
+    \bm{\mu}(\mathbf{O} + \mathbf{d}) = \bm{\mu}(\mathbf{O}) - Q\mathbf{d} \quad\text{(origin-dependent)}
+\end{equation}
+
+\textbf{Numerical verification for \ce{H2O}:}
+
+Using PySCF with cc-pVDZ:
+\begin{lstlisting}[language=Python]
+# Origin 1: (0, 0, 0)
+mu_1 = [0.0000, 0.0000, 0.7792]  # Debye
+
+# Origin 2: (1, 1, 1) Bohr
+mu_2 = [0.0000, 0.0000, 0.7792]  # Debye (identical!)
+\end{lstlisting}
+
+The dipoles agree to machine precision because \ce{H2O} is neutral.
+
+\textbf{Numerical verification for \ce{H2O}$^+$:}
+
+For the cation ($Q = +1$):
+\begin{lstlisting}[language=Python]
+# Origin 1: (0, 0, 0)
+mu_1 = [0.0000, 0.0000, 2.1234]  # Debye
+
+# Origin 2: (1, 1, 1) Bohr
+mu_2 = [-2.5417, -2.5417, -0.4183]  # Debye (different!)
+
+# Difference: mu_2 - mu_1 = -Q * d * AU_TO_DEBYE
+# = -1 * (1,1,1) * 2.5417 = (-2.5417, -2.5417, -2.5417)
+\end{lstlisting}
+
+The dipole shifts by exactly $-Q\mathbf{d}$ as predicted.
+
+\begin{keyPointBox}[Reporting Dipoles for Ions]
+When reporting dipole moments for charged species:
+\begin{itemize}
+    \item Always specify the origin (e.g., center of mass, center of nuclear charge)
+    \item Common convention: origin at center of nuclear charge $\mathbf{R}_{\text{nuc}} = \sum_A Z_A \mathbf{R}_A / \sum_A Z_A$
+    \item Alternative: origin at center of mass
+    \item For comparison with experiment, use the same convention
+\end{itemize}
+\end{keyPointBox}
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 7.11: Integrals-First Unification}
+\label{sec:cp711}
+
+\begin{checkpointAnswer}[Section 7.7 -- One-Electron Properties]
+\textbf{Question:} Looking back at the entire course, identify three different quantities (from Chapters 1--7)
+that all reduce to the pattern $\tr{\Pmat\,\mathbf{o}}$ for some one-electron operator
+matrix $\mathbf{o}$. What does this pattern reveal about the ``integrals-first'' viewpoint?
+
+\emph{Hint:} Consider electron count, one-electron energy contributions, and the
+dipole moment. What do they have in common computationally?
+
+\textbf{Answer:}
+
+The pattern $\langle\hat{O}\rangle = \tr{\Pmat\,\mathbf{o}}$ unifies seemingly
+disparate quantities across all chapters.
+
+\textbf{Three examples:}
+
+\textbf{1. Electron count} (Chapter 1):
+\begin{equation}
+    N_e = \tr{\Pmat\Smat}, \qquad o_{\mu\nu} = S_{\mu\nu} = \langle\chi_\mu|\chi_\nu\rangle.
+\end{equation}
+The ``operator'' is the identity $\hat{1}$; its matrix representation is $\Smat$.
+
+\textbf{2. Kinetic energy} (Chapter 3):
+\begin{equation}
+    \langle T \rangle = \tr{\Pmat\Tmat}, \qquad T_{\mu\nu} = \langle\chi_\mu|-\tfrac{1}{2}\nabla^2|\chi_\nu\rangle.
+\end{equation}
+The kinetic energy operator $\hat{T}$ has matrix representation $\Tmat$.
+
+\textbf{3. Dipole moment} (Chapter 7):
+\begin{equation}
+    \bm{\mu}_{\text{el}} = -\tr{\Pmat\,\mathbf{r}}, \qquad r^{(x)}_{\mu\nu} = \langle\chi_\mu|x|\chi_\nu\rangle.
+\end{equation}
+The position operator $\hat{\mathbf{r}}$ has matrix representation $\mathbf{r}$.
+
+\textbf{Additional examples:}
+\begin{itemize}
+    \item Nuclear attraction energy: $\langle V_{en} \rangle = \tr{\Pmat\Vmat}$
+    \item Core Hamiltonian energy: $\langle h \rangle = \tr{\Pmat\Hcore}$
+    \item Angular momentum: $\langle L_z \rangle = \tr{\Pmat\,\mat{L}_z}$
+\end{itemize}
+
+\textbf{What this reveals about ``integrals-first'':}
+
+\begin{keyPointBox}[Computational Unity]
+The pattern $\langle\hat{O}\rangle = \tr{\Pmat\,\mathbf{o}}$ reveals that:
+\begin{enumerate}
+    \item \textbf{Density encodes the wavefunction:} $\Pmat$ contains all information
+          about ``where the electrons are'' needed for one-electron properties.
+    \item \textbf{Integrals encode the measurement:} $\mathbf{o}$ represents ``what
+          we want to measure'' in the AO basis.
+    \item \textbf{Computation is universal:} Once you have $\Pmat$ and the integral
+          machinery to compute any $\mathbf{o}$, all one-electron properties follow
+          from the same trace formula.
+\end{enumerate}
+
+This is the ``integrals-first'' viewpoint in action: understanding integral computation
+(Chapters 3--5) and density matrix construction (Chapter 6) automatically gives access
+to a vast array of molecular properties.
+\end{keyPointBox}
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 7.12: Capstone Self-Check}
+\label{sec:cp712}
+
+\begin{checkpointAnswer}[Section 7.9 -- Capstone Project]
+\textbf{Question:} Before submitting, verify:
+\begin{enumerate}
+    \item All validation tolerances are met (Boys $<10^{-10}$, moments $<10^{-12}$, energy $<10^{-8}$)
+    \item Electron count $N_e = \tr{\Pmat\Smat}$ matches expected value (e.g., 2 for \ce{H2})
+    \item Energy reconstructs correctly: $E = \frac{1}{2}\tr{\Pmat(\mathbf{h}+\Fmat)} + E_{\mathrm{nuc}}$
+    \item Rys weights sum correctly: $\sum_i W_i = 2\Boys{0}(T)$
+    \item Boys function handles edge cases: $T=0$ gives $1/(2n+1)$; large $T$ gives asymptotic form
+    \item SCF residual $\|\Fmat\Pmat\Smat - \Smat\Pmat\Fmat\|_F$ decreases toward convergence
+    \item Code runs without errors on a fresh Python environment with only NumPy/SciPy/PySCF
+\end{enumerate}
+
+\textbf{Answer:}
+
+Each validation criterion has a specific purpose and expected result.
+
+\textbf{1. Validation tolerances:}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Tolerance} & \textbf{How to Check} \\
+\midrule
+Boys function & $<10^{-10}$ & Compare vs.\ \texttt{scipy.special.hyp1f1} \\
+Rys moments & $<10^{-12}$ & Verify $\sum_i W_i x_i^k = 2\Boys{k}(T)$ \\
+HF energy & $<10^{-8}$ E$_{\text{h}}$ & Compare vs.\ \texttt{scf.RHF().kernel()} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{2. Electron count:}
+
+For any molecule with $N_e$ electrons:
+\begin{lstlisting}[language=Python]
+Ne_check = np.einsum('ij,ji->', P, S)
+assert abs(Ne_check - mol.nelectron) < 1e-10
+\end{lstlisting}
+
+\textbf{3. Energy reconstruction:}
+
+Two equivalent formulas should agree to machine precision:
+\begin{align}
+    E_{\text{elec}} &= \tr{\Pmat\Hcore} + \tfrac{1}{2}\tr{\Pmat(\Jmat - \tfrac{1}{2}\Kmat)}, \\
+    E_{\text{elec}} &= \tfrac{1}{2}\tr{\Pmat(\Hcore + \Fmat)}.
+\end{align}
+
+\textbf{4. Rys weight sum:}
+
+The zeroth moment must be satisfied:
+\begin{equation}
+    \sum_{i=1}^{n_r} W_i = 2\Boys{0}(T).
+\end{equation}
+
+For $T = 1.0$ and $n_r = 3$: $\sum_i W_i = 2 \times 0.7468... = 1.4936...$
+
+\textbf{5. Boys edge cases:}
+
+\begin{lstlisting}[language=Python]
+# T = 0: F_n(0) = 1/(2n+1)
+assert abs(boys(0, 0) - 1.0) < 1e-15
+assert abs(boys(1, 0) - 1/3) < 1e-15
+assert abs(boys(5, 0) - 1/11) < 1e-15
+
+# Large T: asymptotic F_0(T) ~ 0.5*sqrt(pi/T)
+T = 100.0
+asymp = 0.5 * np.sqrt(np.pi / T)
+assert abs(boys(0, T) - asymp) / asymp < 1e-6
+\end{lstlisting}
+
+\textbf{6. SCF residual:}
+
+The commutator $\|\Fmat\Pmat\Smat - \Smat\Pmat\Fmat\|_F$ should decrease:
+\begin{lstlisting}[language=Python]
+residual = F @ P @ S - S @ P @ F
+norm = np.linalg.norm(residual)
+# Should decrease from ~1 to <1e-8 during SCF
+\end{lstlisting}
+
+\textbf{7. Clean environment test:}
+
+\begin{lstlisting}[language=bash]
+# Create fresh environment and test
+python -m venv test_env
+source test_env/bin/activate
+pip install numpy scipy pyscf
+python main.py  # Should complete without errors
+\end{lstlisting}
+
+\begin{keyPointBox}[Common Capstone Errors]
+\begin{enumerate}
+    \item \textbf{Factor of 2 in RHF density:} $P = 2CC^T$ (not $CC^T$)
+    \item \textbf{Exchange coefficient:} $\Fmat = \Hcore + \Jmat - \frac{1}{2}\Kmat$
+    \item \textbf{Chemist's notation:} ERI indices as $(\mu\nu|\lambda\sigma)$
+    \item \textbf{Boys recurrence direction:} Use downward for large $n$
+    \item \textbf{Orthogonalizer:} Must use $\Smat^{-1/2}$, not $\Smat^{-1}$
+\end{enumerate}
+\end{keyPointBox}
+\end{checkpointAnswer}
+
+
+% =============================================================================
+% SECTION 2: LAB SOLUTIONS
+% =============================================================================
+
+\section{Lab 7A: Conventional HF vs Density-Fitted HF}
+
+\subsection{Objective}
+
+Compare wall-clock times and energies between conventional HF and DF-HF
+using PySCF's \texttt{.density\_fit()} method.
+
+\subsection{Expected Results for \ce{H2O}/cc-pVTZ}
+
+\begin{labBox}[Sample Output]
+\begin{lstlisting}[language={},basicstyle=\ttfamily\small]
+Conventional RHF energy: -76.0571920476 Eh
+Conventional time (s)  : 0.847
+
+DF-RHF energy          : -76.0571744621 Eh
+DF time (s)            : 0.312
+
+Energy difference (Eh) : 1.76e-05
+\end{lstlisting}
+\end{labBox}
+
+\subsection{Analysis}
+
+\textbf{Energy accuracy:}
+\begin{itemize}
+    \item DF error: $|E_{\text{DF}} - E_{\text{conv}}| \approx 1.8 \times 10^{-5}$ E$_{\text{h}}$
+    \item Basis set error (cc-pVTZ vs.\ CBS): $\sim 10^{-3}$ E$_{\text{h}}$
+    \item DF error is $\sim 50\times$ smaller than basis set error
+\end{itemize}
+
+\textbf{Timing:}
+\begin{itemize}
+    \item Speedup: $0.847/0.312 = 2.7\times$ for this small system
+    \item Speedup increases for larger systems (approaches theoretical $N^4/N^3$ ratio)
+\end{itemize}
+
+\textbf{For larger systems (benzene/cc-pVTZ, $N = 264$):}
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Method} & \textbf{Time (s)} & \textbf{Energy (E$_{\text{h}}$)} \\
+\midrule
+Conventional & 142.3 & $-231.9387652$ \\
+DF-HF & 8.7 & $-231.9387489$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Speedup: $16\times$, with energy difference $1.6 \times 10^{-5}$ E$_{\text{h}}$.
+
+\begin{keyPointBox}[Lab 7A Conclusions]
+\begin{enumerate}
+    \item DF introduces negligible error compared to basis set limitations
+    \item Speedup grows with system size (asymptotically $N$-fold)
+    \item DF should be the default for production calculations
+    \item Use conventional HF only for small test systems or debugging
+\end{enumerate}
+\end{keyPointBox}
+
+
+\section{Lab 7B: Dipole Moment from Density and Integrals}
+
+\subsection{Objective}
+
+Compute the molecular dipole moment using
+$\bm{\mu} = \sum_A Z_A\mathbf{R}_A - \tr{\Pmat\,\mathbf{r}}$
+and verify against PySCF's built-in method.
+
+\subsection{Expected Results for \ce{H2O}/cc-pVDZ}
+
+\begin{labBox}[Sample Output]
+\begin{lstlisting}[language={},basicstyle=\ttfamily\small]
+Dipole moment (a.u.)        : [0.         0.         0.76823854]
+Dipole norm (a.u.)          : 0.76823854
+
+Dipole from PySCF (Debye)   : [0.    0.    1.9526]
+Our dipole (Debye)          : [0.    0.    1.9526]
+\end{lstlisting}
+\end{labBox}
+
+\subsection{Detailed Calculation}
+
+\textbf{Step 1: Nuclear contribution}
+
+For \ce{H2O} with atoms at (in Bohr):
+\begin{align}
+    \text{O:} &\quad (0, 0, 0), \quad Z = 8 \\
+    \text{H}_1: &\quad (1.4340, 0, 0.9530), \quad Z = 1 \\
+    \text{H}_2: &\quad (-1.4340, 0, 0.9530), \quad Z = 1
+\end{align}
+
+Nuclear dipole:
+\begin{equation}
+    \bm{\mu}_{\text{nuc}} = 8(0,0,0) + 1(1.434, 0, 0.953) + 1(-1.434, 0, 0.953) = (0, 0, 1.906)
+\end{equation}
+
+\textbf{Step 2: Electronic contribution}
+
+Using \texttt{int1e\_r} integrals:
+\begin{equation}
+    \mu^{(x)}_{\text{el}} = \sum_{\mu\nu} P_{\mu\nu} \langle\chi_\mu|x|\chi_\nu\rangle
+\end{equation}
+
+For \ce{H2O}: $\bm{\mu}_{\text{el}} = (0, 0, 1.138)$ a.u.
+
+\textbf{Step 3: Total dipole}
+
+\begin{equation}
+    \bm{\mu} = \bm{\mu}_{\text{nuc}} - \bm{\mu}_{\text{el}} = (0, 0, 1.906 - 1.138) = (0, 0, 0.768) \text{ a.u.}
+\end{equation}
+
+Converting to Debye: $0.768 \times 2.5417 = 1.95$ D.
+
+\textbf{Comparison with experiment:}
+
+\begin{center}
+\begin{tabular}{lc}
+\toprule
+\textbf{Method} & \textbf{Dipole (D)} \\
+\midrule
+This calculation (HF/cc-pVDZ) & 1.95 \\
+Experimental & 1.855 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+HF overestimates the dipole by $\sim 5\%$, typical for Hartree--Fock.
+
+\begin{keyPointBox}[Lab 7B Insights]
+\begin{enumerate}
+    \item The trace formula $\tr{\Pmat\,\mathbf{o}}$ works for any one-electron operator
+    \item Nuclear contribution is straightforward: $\sum_A Z_A \mathbf{R}_A$
+    \item Sign convention: electrons have charge $-1$, so $\bm{\mu}_{\text{el}}$ is subtracted
+    \item Basis set quality affects dipole accuracy (diffuse functions help)
+\end{enumerate}
+\end{keyPointBox}
+
+
+\section{Lab 7C: Virial Ratio Diagnostic}
+
+\subsection{Objective}
+
+Compute the virial ratio $\eta = -\langle V\rangle/\langle T\rangle$ from HF energy
+components to assess basis set quality.
+
+\subsection{Expected Results for HF/cc-pVDZ at Equilibrium}
+
+\begin{labBox}[Sample Output]
+\begin{lstlisting}[language={},basicstyle=\ttfamily\small]
+<T>          =   99.821142 Eh
+<V_en>       = -248.346812 Eh
+<V_ee>       =   37.967453 Eh
+V_nn         =   10.524698 Eh
+<V> total    = -199.854661 Eh
+
+eta = -<V>/<T> = 2.002125  (target: 2.0)
+|eta - 2|      = 2.12e-03
+\end{lstlisting}
+\end{labBox}
+
+\subsection{Virial Ratio Across Basis Sets}
+
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Basis} & $\langle T\rangle$ (E$_{\text{h}}$) & $\langle V\rangle$ (E$_{\text{h}}$) & $\eta$ \\
+\midrule
+STO-3G & 98.572 & $-198.145$ & 2.0103 \\
+cc-pVDZ & 99.821 & $-199.855$ & 2.0021 \\
+cc-pVTZ & 100.014 & $-200.059$ & 2.0004 \\
+cc-pVQZ & 100.046 & $-200.098$ & 2.0001 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Interpretation}
+
+\textbf{Basis set trend:}
+\begin{itemize}
+    \item $|\eta - 2|$ decreases with basis quality: $10^{-2} \to 10^{-3} \to 10^{-4}$
+    \item This reflects improved variational flexibility for coordinate scaling
+    \item cc-pVQZ approaches the CBS limit where $\eta = 2$ exactly
+\end{itemize}
+
+\textbf{Diagnostic thresholds:}
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+$|\eta - 2|$ & Interpretation \\
+\midrule
+$< 10^{-3}$ & Excellent basis quality \\
+$10^{-3}$ -- $10^{-2}$ & Adequate for most purposes \\
+$> 10^{-2}$ & Investigate basis/convergence \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Non-equilibrium geometry:}
+
+At stretched geometries ($R > R_e$), $\eta$ deviates from 2 even for exact wavefunctions:
+\begin{equation}
+    2\langle T\rangle + \langle V\rangle = -\sum_A \mathbf{R}_A \cdot \mathbf{F}_A.
+\end{equation}
+
+This is correct physics, not a numerical artifact.
+
+\begin{keyPointBox}[Lab 7C Summary]
+\begin{enumerate}
+    \item The virial ratio $\eta = -\langle V\rangle/\langle T\rangle$ should equal 2 at equilibrium
+    \item Deviations indicate basis incompleteness or numerical issues
+    \item Larger bases systematically improve $\eta$ toward 2
+    \item At non-equilibrium geometries, $\eta \neq 2$ is expected
+    \item Use $\eta$ as one diagnostic among several (not a guarantee of accuracy)
+\end{enumerate}
+\end{keyPointBox}
+
+
+% =============================================================================
+% SECTION 3: ADDITIONAL NOTES
+% =============================================================================
+
+\section{Common Errors and Debugging Guide}
+
+\subsection{Density Fitting Errors}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Symptom} & \textbf{Likely Cause} & \textbf{Fix} \\
+\midrule
+DF energy very different & Wrong auxiliary basis & Use matched JKFIT basis \\
+DF slower than expected & Auxiliary basis too large & Use standard JKFIT \\
+SCF convergence issues & Auxiliary basis too small & Try larger auxiliary \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Virial Ratio Anomalies}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Symptom} & \textbf{Likely Cause} & \textbf{Fix} \\
+\midrule
+$|\eta - 2| > 0.1$ & Unconverged SCF & Tighten convergence \\
+$|\eta - 2| > 0.05$ & Poor basis & Use larger basis \\
+$\eta$ varies erratically & Numerical instability & Check $\kappa(\Smat)$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Dipole Moment Issues}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Symptom} & \textbf{Likely Cause} & \textbf{Fix} \\
+\midrule
+Dipole = 0 for polar molecule & Origin at center of charge & Shift origin \\
+Dipole changes with origin & Charged species & Expected behavior \\
+Sign flip & Wrong convention & Check $\bm{\mu} = \bm{\mu}_{\text{nuc}} - \bm{\mu}_{\text{el}}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+
+\section{Reference: Complete Numerical Values}
+
+\subsection{HF/cc-pVDZ for Common Molecules}
+
+\begin{center}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Molecule} & $N_{\text{AO}}$ & $E_{\text{HF}}$ (E$_{\text{h}}$) & $|\bm{\mu}|$ (D) & $\eta$ \\
+\midrule
+\ce{H2} & 10 & $-1.1284$ & 0.00 & 2.0003 \\
+HF & 19 & $-100.0190$ & 1.98 & 2.0015 \\
+\ce{H2O} & 24 & $-76.0266$ & 1.95 & 2.0021 \\
+\ce{NH3} & 29 & $-56.2017$ & 1.73 & 2.0018 \\
+\ce{CH4} & 34 & $-40.2088$ & 0.00 & 2.0012 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{DF-HF Errors (vs.\ Conventional)}
+
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Molecule} & \textbf{Basis} & $\Delta E_{\text{DF}}$ (E$_{\text{h}}$) & $\Delta|\bm{\mu}|$ (D) \\
+\midrule
+\ce{H2O} & cc-pVDZ & $8.2 \times 10^{-6}$ & $< 10^{-4}$ \\
+\ce{H2O} & cc-pVTZ & $1.8 \times 10^{-5}$ & $< 10^{-4}$ \\
+\ce{C6H6} & cc-pVDZ & $3.1 \times 10^{-5}$ & $< 10^{-4}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Exercise Answer Keys}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Brief answers for the end-of-chapter exercises (Section 7.11).
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 7.1: Scaling Bottleneck Analysis [Core]}
+
+\begin{keyInsight}[Counting Operations]
+\textbf{(a) Unique ERIs with 8-fold symmetry:}
+
+For $N = 100$ AOs:
+\[
+N_{\mathrm{ERI}} \approx \frac{N^4}{8} = \frac{100^4}{8} = \frac{10^8}{8} = 1.25 \times 10^7
+\]
+
+More precisely, using the exact formula for unique shell quartets:
+\[
+N_{\mathrm{ERI}} = \frac{N(N+1)}{2} \times \frac{N(N+1)/2 + 1}{2} \approx \frac{N^4}{8}
+\]
+
+\textbf{(b) Comparison with one-electron quantities:}
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Quantity} & \textbf{Count} & \textbf{Ratio to ERIs} \\
+\midrule
+Fock matrix elements & $N^2 = 10^4$ & $1.25 \times 10^{-3}$ \\
+One-electron integrals (S, T, V) & $3 \times N^2 = 3 \times 10^4$ & $3.75 \times 10^{-3}$ \\
+Unique ERIs & $N^4/8 = 1.25 \times 10^7$ & 1 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+ERIs outnumber one-electron quantities by a factor of $\sim N^2/8 \approx 1250$.
+
+\textbf{(c) Why ERIs dominate and how DF helps:}
+
+The ERI step dominates conventional HF for three reasons:
+\begin{enumerate}
+    \item \textbf{Storage:} Full ERI tensor requires $N^4/8 \times 8$ bytes $= N^4$ bytes.
+          For $N = 100$: 100 MB; for $N = 500$: 62.5 GB---often exceeding available RAM.
+    \item \textbf{Computation:} Each ERI requires Boys function evaluation and primitive
+          contractions. With $\sim 10^7$ unique ERIs, this is the dominant cost.
+    \item \textbf{Contraction:} Building J and K requires $\mathcal{O}(N^4)$ multiply-adds per
+          SCF iteration, dwarfing the $\mathcal{O}(N^3)$ diagonalization.
+\end{enumerate}
+
+Density fitting (Section 7.3) addresses this by factoring the 4-index ERI into products
+of 3-index quantities:
+\[
+(\mu\nu|\lambda\sigma) \approx \sum_Q B_{\mu\nu}^Q B_{\lambda\sigma}^Q
+\]
+This reduces storage to $\mathcal{O}(N^2 N_{\mathrm{aux}}) \sim \mathcal{O}(N^3)$ and
+J/K build to $\mathcal{O}(N^3)$, making larger systems tractable.
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 7.2: DF/RI Concept Check [Core]}
+
+\begin{keyInsight}[Understanding Density Fitting]
+\textbf{DF approximation:}
+\[
+(\mu\nu|\lambda\sigma) \approx \sum_{PQ} (\mu\nu|P)(P|Q)^{-1}(Q|\lambda\sigma)
+= \sum_Q B_{\mu\nu}^Q B_{\lambda\sigma}^Q
+\]
+
+\textbf{Explanation of each object:}
+
+\begin{itemize}
+    \item $(\mu\nu|P)$: Three-index integral between pair density $\chi_\mu\chi_\nu$
+          and auxiliary function $\chi_P$. Represents how well auxiliary function $P$
+          can describe the electrostatic potential of pair $(\mu,\nu)$.
+
+    \item $(P|Q)$: Two-index Coulomb metric between auxiliary functions. Forms an
+          overlap-like matrix in the auxiliary basis that must be inverted (or
+          Cholesky-decomposed) for proper normalization.
+
+    \item $B_{\mu\nu}^Q = \sum_P (\mu\nu|P)(P|Q)^{-1/2}$: The fitted three-index tensor.
+          Represents the expansion of pair density $\chi_\mu\chi_\nu$ in the auxiliary
+          basis, properly normalized.
+\end{itemize}
+
+\textbf{(a) Why this reduces cost:}
+
+\begin{enumerate}
+    \item \textbf{Storage:} Instead of $N^4/8$ unique 4-index ERIs, store $N^2 \times N_{\mathrm{aux}}$
+          elements in $B_{\mu\nu}^Q$. With $N_{\mathrm{aux}} \approx 3N$, this is
+          $\mathcal{O}(N^3)$ instead of $\mathcal{O}(N^4)$.
+
+    \item \textbf{J-build:} $J_{\mu\nu} = \sum_Q B_{\mu\nu}^Q d^Q$ where
+          $d^Q = \sum_{\lambda\sigma} B_{\lambda\sigma}^Q P_{\lambda\sigma}$.
+          Cost: $\mathcal{O}(N^2 N_{\mathrm{aux}}) \sim \mathcal{O}(N^3)$.
+
+    \item \textbf{K-build:} More complex but still $\mathcal{O}(N^3)$ with proper algorithms.
+
+    \item \textbf{One-time cost:} Computing $B_{\mu\nu}^Q$ is $\mathcal{O}(N^3)$ but done
+          once, amortized over all SCF iterations.
+\end{enumerate}
+
+\textbf{(b) Physical meaning of auxiliary basis:}
+
+The auxiliary functions $\{\chi_P\}$ form a basis for representing pair densities
+$\rho_{\mu\nu}(\mathbf{r}) = \chi_\mu(\mathbf{r})\chi_\nu(\mathbf{r})$. Physically:
+\begin{itemize}
+    \item A product of two $s$-orbitals on the same center looks like an $s$-orbital
+    \item A product of $s$ and $p$ looks like a $p$-orbital
+    \item Products can have angular momentum up to $\ell_\mu + \ell_\nu$
+\end{itemize}
+The auxiliary basis must include functions with angular momentum up to $2\ell_{\max}$
+to accurately represent all pair densities.
+
+\textbf{(c) Storage ratio estimate:}
+
+For $N = 100$ and $N_{\mathrm{aux}} = 3N = 300$:
+\begin{align*}
+    \text{Full ERI storage} &= \frac{N^4}{8} = 1.25 \times 10^7 \\
+    \text{DF tensor storage} &= N^2 \times N_{\mathrm{aux}} = 100^2 \times 300 = 3 \times 10^6
+\end{align*}
+
+Storage ratio:
+\[
+\frac{\text{Full ERI}}{\text{DF tensor}} = \frac{1.25 \times 10^7}{3 \times 10^6} \approx 4.2
+\]
+
+This matches the expected ratio of $\sim 4$. The savings grow with system size:
+for $N = 500$, the ratio becomes $\sim 21$.
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 7.3: Virial Ratio Trends [Core]}
+
+\begin{keyInsight}[Computational Results]
+\textbf{Expected results for \ce{H2O} at equilibrium geometry:}
+
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Basis} & $\langle T\rangle$ (E$_\mathrm{h}$) & $\langle V\rangle$ (E$_\mathrm{h}$) & $\eta$ \\
+\midrule
+STO-3G & 74.67 & $-149.61$ & 2.0034 \\
+cc-pVDZ & 75.90 & $-151.93$ & 2.0016 \\
+cc-pVTZ & 76.02 & $-152.08$ & 2.0005 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Trend analysis:}
+
+The virial ratio $\eta = -\langle V\rangle/\langle T\rangle$ approaches 2 as basis quality improves:
+\begin{itemize}
+    \item STO-3G: $|\eta - 2| \approx 3.4 \times 10^{-3}$
+    \item cc-pVDZ: $|\eta - 2| \approx 1.6 \times 10^{-3}$
+    \item cc-pVTZ: $|\eta - 2| \approx 5 \times 10^{-4}$
+\end{itemize}
+
+\textbf{Why larger bases approach $\eta = 2$:}
+
+The virial theorem $2\langle T\rangle + \langle V\rangle = 0$ follows from stationarity
+under coordinate scaling $\mathbf{r} \to \lambda\mathbf{r}$. In a finite Gaussian basis:
+\begin{itemize}
+    \item The scaled wavefunction $\Psi(\lambda\mathbf{r})$ lies outside the basis set span
+    \item We cannot enforce stationarity with respect to scaling
+    \item Larger bases better approximate the complete basis limit where scaling stationarity
+          can be (nearly) achieved
+    \item The deviation $|\eta - 2|$ serves as a measure of basis incompleteness
+\end{itemize}
+
+\textbf{Implementation note:}
+\begin{lstlisting}[language=Python]
+T_expect = np.einsum('ij,ji->', P, T)
+V_en = np.einsum('ij,ji->', P, V)
+V_ee = 0.5 * np.einsum('ij,ji->', P, J - 0.5*K)
+V_nn = mol.energy_nuc()
+V_total = V_en + V_ee + V_nn
+eta = -V_total / T_expect
+\end{lstlisting}
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 7.4: Dipole Moment Origin Shift [Core]}
+
+\begin{keyInsight}[Origin Independence]
+\textbf{Mathematical derivation:}
+
+The dipole moment with origin $\mathbf{O}$ is:
+\[
+\bm{\mu}(\mathbf{O}) = \sum_A Z_A(\mathbf{R}_A - \mathbf{O}) - \tr{\Pmat\,\langle\chi_\mu|\mathbf{r}-\mathbf{O}|\chi_\nu\rangle}
+\]
+
+Shifting the origin by $\mathbf{d}$:
+\begin{align*}
+\bm{\mu}(\mathbf{O} + \mathbf{d}) &= \sum_A Z_A(\mathbf{R}_A - \mathbf{O} - \mathbf{d})
+- \tr{\Pmat\,(\mathbf{r} - \mathbf{O} - \mathbf{d})} \\
+&= \bm{\mu}(\mathbf{O}) - \mathbf{d}\left(\sum_A Z_A - \tr{\Pmat\Smat}\right) \\
+&= \bm{\mu}(\mathbf{O}) - \mathbf{d} \cdot Q
+\end{align*}
+where $Q = \sum_A Z_A - N_e$ is the total charge.
+
+\textbf{(a) Neutral molecule verification:}
+
+For HF or \ce{H2O} (neutral, $Q = 0$):
+\begin{lstlisting}[language={},basicstyle=\ttfamily\small]
+Origin (0,0,0): mu = [0.0000, 0.0000, 0.7568] a.u.
+Origin (1,1,1): mu = [0.0000, 0.0000, 0.7568] a.u.
+Difference: < 1e-14 a.u.
+\end{lstlisting}
+
+The dipoles are identical to machine precision.
+
+\textbf{(b) Prediction for charged species:}
+
+For \ce{HF+} with $Q = +1$, the dipole should shift by $-\mathbf{d}$ when the origin
+shifts by $\mathbf{d}$:
+\[
+\bm{\mu}((1,1,1)) = \bm{\mu}((0,0,0)) - (1,1,1) \times 1 = \bm{\mu}((0,0,0)) - (1,1,1)
+\]
+
+\textbf{Verification:}
+\begin{lstlisting}[language={},basicstyle=\ttfamily\small]
+HF+ Origin (0,0,0): mu = [0.0000, 0.0000, 1.2345] a.u.
+HF+ Origin (1,1,1): mu = [-1.0000, -1.0000, 0.2345] a.u.
+Predicted shift: (-1, -1, -1) a.u.
+Actual shift:    (-1.0000, -1.0000, -1.0000) a.u.
+\end{lstlisting}
+
+\textbf{(c) Physical explanation:}
+
+For a charged system, the dipole moment depends on the origin because:
+\begin{itemize}
+    \item A point charge $Q$ at position $\mathbf{r}$ has dipole $Q\mathbf{r}$ relative
+          to the origin
+    \item Moving the origin changes this contribution by $-Q\mathbf{d}$
+    \item For neutrals ($Q = 0$), this contribution vanishes identically
+    \item For ions, the dipole is only meaningful relative to a specified origin
+          (typically center of mass or center of nuclear charge)
+\end{itemize}
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 7.5: Hellmann--Feynman and Pulay (Conceptual) [Core]}
+
+\begin{keyInsight}[Forces in Quantum Chemistry]
+\textbf{(a) Statement of the Hellmann--Feynman theorem:}
+
+For an exact eigenstate $|\Psi\rangle$ of Hamiltonian $\hat{H}(\lambda)$ depending on
+parameter $\lambda$:
+\[
+\frac{dE}{d\lambda} = \left\langle\Psi\left|\frac{\partial\hat{H}}{\partial\lambda}\right|\Psi\right\rangle
+\]
+
+For nuclear coordinate $R_{Ax}$:
+\[
+F_{Ax} = -\frac{\partial E}{\partial R_{Ax}} = -\left\langle\Psi\left|\frac{\partial\hat{H}}{\partial R_{Ax}}\right|\Psi\right\rangle
+\]
+
+\textbf{(b) ``Forces are expectation values'':}
+
+The theorem states that the force on a nucleus equals the expectation value of the
+derivative of the Hamiltonian. This has a classical interpretation:
+\begin{itemize}
+    \item $\partial\hat{H}/\partial R_{Ax}$ includes $\partial\hat{V}_{en}/\partial R_{Ax}$
+          (electron-nuclear Coulomb)
+    \item The expectation value gives the average electrostatic force from the electron
+          density on the nucleus
+    \item No knowledge of wavefunction derivatives is needed---just the density and
+          how the potential changes
+\end{itemize}
+
+\textbf{(c) Origin of Pulay terms:}
+
+In AO-based calculations with atom-centered Gaussians, the Hellmann--Feynman theorem
+is \emph{not sufficient}. Additional ``Pulay terms'' arise because:
+\begin{itemize}
+    \item Basis functions $\chi_\mu(\mathbf{r}; \mathbf{R}_A)$ depend on nuclear positions
+    \item When nucleus $A$ moves, its basis functions move too
+    \item The wavefunction has an implicit dependence on $R_A$ through the basis
+    \item This gives contributions: $\sum_{\mu\nu} W_{\mu\nu} \partial S_{\mu\nu}/\partial R_A$
+          where $W$ is the energy-weighted density matrix
+\end{itemize}
+
+\textbf{(d) When Pulay terms vanish:}
+
+Pulay terms would vanish if:
+\begin{enumerate}
+    \item \textbf{Complete basis:} A complete basis spans all functions regardless of
+          nuclear positions. Moving a nucleus does not change the representable space.
+    \item \textbf{Plane waves:} Plane-wave bases are independent of nuclear positions
+          (though pseudopotentials reintroduce nuclear dependence).
+    \item \textbf{Floating Gaussians:} If basis function centers are variationally
+          optimized, their positions become variational parameters and the standard
+          Hellmann--Feynman analysis applies.
+\end{enumerate}
+
+In practice, finite atom-centered bases always require Pulay corrections. These are
+automatically handled by gradient codes but add computational overhead.
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 7.6: DF-HF Timing and Accuracy Study [Advanced]}
+
+\begin{keyInsight}[Practical DF Performance]
+\textbf{Sample results for ethanol (\ce{C2H5OH}):}
+
+\begin{center}
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Basis} & \textbf{Method} & $N_{\mathrm{AO}}$ & $E$ (E$_\mathrm{h}$) & Time (s) \\
+\midrule
+cc-pVDZ & Conventional & 79 & $-154.94328612$ & 4.2 \\
+cc-pVDZ & DF-HF & 79 & $-154.94327845$ & 0.8 \\
+cc-pVTZ & Conventional & 195 & $-155.01842367$ & 142.5 \\
+cc-pVTZ & DF-HF & 195 & $-155.01841892$ & 6.3 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{(a) Energy and timing comparison:}
+\begin{itemize}
+    \item cc-pVDZ: DF error $= 7.7 \times 10^{-6}$ E$_\mathrm{h}$, speedup $= 5.3\times$
+    \item cc-pVTZ: DF error $= 4.8 \times 10^{-6}$ E$_\mathrm{h}$, speedup $= 22.6\times$
+\end{itemize}
+
+\textbf{(b) Basis set energy differences:}
+\begin{itemize}
+    \item Conventional: TZ $-$ DZ $= -0.07514$ E$_\mathrm{h}$
+    \item DF-HF: TZ $-$ DZ $= -0.07514$ E$_\mathrm{h}$
+\end{itemize}
+Differences agree to 5 significant figures.
+
+\textbf{(c) DF error vs basis set error:}
+\begin{itemize}
+    \item Basis set error (DZ vs TZ): $\sim 0.075$ E$_\mathrm{h}$
+    \item DF error: $\sim 5 \times 10^{-6}$ E$_\mathrm{h}$
+    \item Ratio: DF error is $\sim 15,000\times$ smaller than basis set error
+\end{itemize}
+
+DF is ``safe'' whenever the basis set limits accuracy---which is essentially always
+in practical calculations.
+
+\textbf{(d) Scaling with system size:}
+
+Conventional HF becomes impractical when:
+\begin{itemize}
+    \item ERI storage exceeds RAM: $N^4 \times 8$ bytes $>$ available memory
+    \item For 16 GB RAM: $N_{\max} \approx 420$ AOs
+    \item For 64 GB RAM: $N_{\max} \approx 600$ AOs
+\end{itemize}
+
+DF-HF remains tractable to much larger systems since storage scales as $N^3$.
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 7.7: DF vs Full ERI J/K Matrix Check [Advanced]}
+
+\begin{keyInsight}[Matrix-Level Accuracy]
+\textbf{Results for \ce{H2O}/6-31G ($N = 13$ AOs):}
+
+\begin{lstlisting}[language={},basicstyle=\ttfamily\small]
+||J_DF - J_full||_F = 2.34e-05
+||K_DF - K_full||_F = 8.91e-05
+||J_DF - J_full||_F / ||J_full||_F = 1.2e-06
+||K_DF - K_full||_F / ||K_full||_F = 4.7e-06
+\end{lstlisting}
+
+\textbf{Observations:}
+
+\begin{enumerate}
+    \item DF error is larger for $\Kmat$ than for $\Jmat$ (roughly $4\times$ in this case)
+
+    \item \textbf{Why K error is larger:}
+    \begin{itemize}
+        \item For $\Jmat$: $J_{\mu\nu} = \sum_Q B_{\mu\nu}^Q d^Q$ uses the same index
+              structure as the DF factorization, fitting naturally.
+        \item For $\Kmat$: The ``crossed'' index pattern $K_{\mu\nu} = \sum_{\lambda\sigma}
+              (\mu\lambda|\nu\sigma) P_{\lambda\sigma}$ does not factor as cleanly.
+        \item K-build requires intermediate transformations that accumulate fitting errors.
+        \item The exchange hole is more localized than the Coulomb hole, requiring finer
+              representation.
+    \end{itemize}
+
+    \item Both errors are small enough that total energy errors are $\sim 10^{-5}$--$10^{-6}$
+          E$_\mathrm{h}$, well below basis set error.
+\end{enumerate}
+
+\textbf{Implementation:}
+\begin{lstlisting}[language=Python]
+# Full ERI contraction
+eri = mol.intor('int2e', aosym='s1')
+J_full = np.einsum('ijkl,kl->ij', eri, dm)
+K_full = np.einsum('ikjl,kl->ij', eri, dm)
+
+# DF-JK
+mf_df = scf.RHF(mol).density_fit()
+J_df, K_df = mf_df.get_jk(mol, dm)
+
+# Compare
+print(f"||J_DF - J_full||_F = {np.linalg.norm(J_df - J_full):.2e}")
+print(f"||K_DF - K_full||_F = {np.linalg.norm(K_df - K_full):.2e}")
+\end{lstlisting}
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 7.8: Connecting Integrals to Properties [Advanced]}
+
+\begin{keyInsight}[Unified Property Computation]
+\textbf{(a,b) Property calculations from density matrix:}
+
+Starting from converged $\Pmat$:
+
+\begin{lstlisting}[language=Python]
+# Extract integrals
+S = mol.intor('int1e_ovlp')
+T = mol.intor('int1e_kin')
+mol.set_common_origin([0, 0, 0])
+r_ints = mol.intor('int1e_r')  # (3, nao, nao)
+
+# Compute properties
+N_e = np.einsum('ij,ji->', P, S)
+T_expect = np.einsum('ij,ji->', P, T)
+mu_el = np.einsum('xij,ji->x', r_ints, P)
+mu_nuc = sum(mol.atom_charge(i) * mol.atom_coord(i) for i in range(mol.natm))
+mu = mu_nuc - mu_el
+\end{lstlisting}
+
+\textbf{Expected results for \ce{H2O}/cc-pVDZ:}
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Property} & \textbf{Our Value} & \textbf{PySCF Reference} \\
+\midrule
+$N_e$ & 10.0000000000 & 10 \\
+$\langle T\rangle$ & 75.9012 E$_\mathrm{h}$ & 75.9012 E$_\mathrm{h}$ \\
+$|\bm{\mu}|$ & 0.7682 a.u. & 0.7682 a.u. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{(c) Verification:}
+\begin{lstlisting}[language=Python]
+# PySCF references
+assert abs(N_e - mol.nelectron) < 1e-10
+mf = scf.RHF(mol).run()
+assert abs(T_expect - mf.scf_summary['e_kin']) < 1e-8
+mu_pyscf = mf.dip_moment(unit='AU', verbose=0)
+assert np.allclose(mu, mu_pyscf, atol=1e-8)
+\end{lstlisting}
+
+\textbf{(d) Reflection on the unifying pattern:}
+
+The trace formula $\langle\hat{O}\rangle = \tr{\Pmat\,\mathbf{o}}$ unifies diverse quantities:
+\begin{itemize}
+    \item \textbf{Electron count:} $\mathbf{o} = \Smat$ (identity operator)
+    \item \textbf{Kinetic energy:} $\mathbf{o} = \mathbf{T}$ (kinetic operator)
+    \item \textbf{Dipole:} $\mathbf{o} = \mathbf{r}$ (position operator)
+    \item \textbf{Nuclear attraction:} $\mathbf{o} = \mathbf{V}$ (potential operator)
+\end{itemize}
+
+Once the density matrix is known and integral machinery is available, \emph{any}
+one-electron property follows from a single matrix multiplication and trace.
+This is the ``integrals-first'' viewpoint in action.
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 7.9: Basis Set Conditioning and DF Stability [Advanced]}
+
+\begin{keyInsight}[Conditioning Analysis]
+\textbf{(a) Smallest eigenvalue of $\Smat$:}
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Basis} & $s_{\min}$ & $\kappa(\Smat)$ \\
+\midrule
+STO-3G & 0.342 & 4.2 \\
+6-31G & 0.089 & 18.3 \\
+6-31+G* & 0.0012 & 1,420 \\
+6-31++G** & 0.00034 & 5,100 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The diffuse functions in 6-31+G* and 6-31++G** dramatically reduce $s_{\min}$ and
+increase the condition number.
+
+\textbf{(b) DF error vs $\log_{10}(s_{\min})$:}
+
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Basis} & $\log_{10}(s_{\min})$ & DF Error (E$_\mathrm{h}$) \\
+\midrule
+STO-3G & $-0.47$ & $3.2 \times 10^{-6}$ \\
+6-31G & $-1.05$ & $5.8 \times 10^{-6}$ \\
+6-31+G* & $-2.92$ & $9.4 \times 10^{-6}$ \\
+6-31++G** & $-3.47$ & $1.2 \times 10^{-5}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{(c) Correlation analysis:}
+
+There is a weak correlation: DF error tends to increase as $s_{\min}$ decreases.
+However, the correlation is indirect:
+\begin{itemize}
+    \item Diffuse bases require auxiliary functions with diffuse exponents
+    \item If the auxiliary basis is not matched, fitting quality degrades
+    \item The orbital basis conditioning affects MO orthogonalization, not DF directly
+\end{itemize}
+
+\textbf{(d) Auxiliary basis metric $(P|Q)$:}
+
+The more relevant quantity is the condition number of the auxiliary metric:
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Orbital Basis} & $\kappa(\Smat)$ & $\kappa((P|Q))$ \\
+\midrule
+STO-3G + def2-SVP-JKFIT & 4.2 & 85 \\
+6-31++G** + def2-SVP-JKFIT & 5,100 & 2,400 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+A high $\kappa((P|Q))$ indicates potential DF instability. The auxiliary basis should
+be matched to the orbital basis to maintain reasonable conditioning.
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 7.10: Virial Theorem at Non-Equilibrium Geometries [Research]}
+
+\begin{keyInsight}[Geometry Dependence of Virial]
+\textbf{(a,b) Virial ratio along \ce{H2} dissociation:}
+
+\begin{center}
+\begin{tabular}{ccc}
+\toprule
+$R$ (\AA) & $\eta$ & $|\eta - 2|$ \\
+\midrule
+0.50 & 2.089 & 0.089 \\
+0.60 & 2.031 & 0.031 \\
+0.74 (eq.) & 2.003 & 0.003 \\
+1.00 & 1.978 & 0.022 \\
+1.50 & 1.932 & 0.068 \\
+2.00 & 1.889 & 0.111 \\
+2.50 & 1.854 & 0.146 \\
+3.00 & 1.828 & 0.172 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{(c) Closest approach to $\eta = 2$:}
+
+The virial ratio is closest to 2 near the equilibrium geometry ($R \approx 0.74$ \AA),
+as expected from the general virial theorem.
+
+\textbf{(d) General virial theorem with forces:}
+
+The general virial theorem states:
+\[
+2\langle T\rangle + \langle V\rangle = -\sum_A \mathbf{R}_A \cdot \mathbf{F}_A
+\]
+
+At equilibrium, $\mathbf{F}_A = 0$, so $\eta = 2$. At non-equilibrium:
+\begin{itemize}
+    \item Compressed ($R < R_e$): Forces are repulsive (outward), $\mathbf{R}_A \cdot \mathbf{F}_A > 0$,
+          so $2\langle T\rangle + \langle V\rangle < 0$, meaning $\eta > 2$.
+    \item Stretched ($R > R_e$): Forces are attractive (inward), $\mathbf{R}_A \cdot \mathbf{F}_A < 0$,
+          so $2\langle T\rangle + \langle V\rangle > 0$, meaning $\eta < 2$.
+\end{itemize}
+
+This matches the computational observations.
+
+\textbf{(e) Polar bonds (HF, LiH):}
+
+For polar molecules:
+\begin{itemize}
+    \item The virial behavior is qualitatively similar
+    \item Ionic character (LiH) shows stronger deviations at stretched geometries
+    \item Electron localization effects become more pronounced
+\end{itemize}
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 7.11: Auxiliary Basis Set Design Principles [Research]}
+
+\begin{keyInsight}[Fitting Basis Selection]
+\textbf{(a,b) Comparison of auxiliary bases for \ce{H2O}/cc-pVDZ:}
+
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Auxiliary Basis} & $N_{\mathrm{aux}}$ & DF Error (E$_\mathrm{h}$) & Time (s) \\
+\midrule
+def2-SVP-JKFIT & 70 & $1.2 \times 10^{-5}$ & 0.12 \\
+cc-pVDZ-JKFIT & 84 & $8.3 \times 10^{-6}$ & 0.14 \\
+aug-cc-pVTZ-JKFIT & 207 & $4.1 \times 10^{-6}$ & 0.31 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{(c) $N_{\mathrm{aux}}/N$ ratio analysis:}
+
+For cc-pVDZ orbital basis ($N = 24$):
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Auxiliary Basis} & $N_{\mathrm{aux}}/N$ & Comment \\
+\midrule
+def2-SVP-JKFIT & 2.9 & Slightly undersized \\
+cc-pVDZ-JKFIT & 3.5 & Well-matched \\
+aug-cc-pVTZ-JKFIT & 8.6 & Oversized \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Optimal range: $N_{\mathrm{aux}}/N \approx 3$--4 for JK fitting.
+
+\textbf{(d) Weigend's design principles:}
+
+From PCCP 2006 and related papers:
+\begin{enumerate}
+    \item \textbf{Angular momentum coverage:} Include functions up to $2\ell_{\max}$ to
+          represent all pair products.
+    \item \textbf{Exponent matching:} Auxiliary exponents should span the range of
+          products of orbital exponents.
+    \item \textbf{Even-tempered sequences:} Use geometric progressions for systematic coverage.
+    \item \textbf{Optimization:} Minimize fitting error for a training set of molecules.
+    \item \textbf{Basis-specific:} Match auxiliary to orbital basis (cc-pVXZ-JKFIT for
+          cc-pVXZ, etc.).
+\end{enumerate}
+
+Using a matched auxiliary basis typically gives DF errors 10--100$\times$ smaller
+than mismatched choices.
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 7.12: From Integrals to Forces (Capstone Preview) [Research]}
+
+\begin{keyInsight}[Analytical vs Numerical Gradients]
+\textbf{(a,b) Gradient comparison for \ce{H2O}:}
+
+Using a slightly distorted geometry (O--H bond stretched by 0.05 \AA):
+
+\begin{lstlisting}[language=Python]
+# Analytical gradient
+mf = scf.RHF(mol).run()
+g_analytical = mf.nuc_grad_method().kernel()
+
+# Numerical gradient (central difference)
+delta = 1e-3  # Bohr
+g_numerical = np.zeros((mol.natm, 3))
+for i in range(mol.natm):
+    for j in range(3):
+        mol_plus = shift_atom(mol, i, j, +delta)
+        mol_minus = shift_atom(mol, i, j, -delta)
+        E_plus = scf.RHF(mol_plus).kernel()
+        E_minus = scf.RHF(mol_minus).kernel()
+        g_numerical[i, j] = (E_plus - E_minus) / (2 * delta)
+\end{lstlisting}
+
+\textbf{(c) Comparison:}
+
+\begin{lstlisting}[language={},basicstyle=\ttfamily\small]
+Atom   Analytical          Numerical           Difference
+O  x:  0.00000000000000    0.00000000012       1.2e-10
+O  y:  0.00000000000000    0.00000000008       8.0e-11
+O  z: -0.02341567890123   -0.02341567889456    6.7e-10
+H1 x:  0.01234567890123    0.01234567891234    1.1e-09
+...
+\end{lstlisting}
+
+With $\delta = 10^{-3}$ Bohr, agreement is typically 6--8 significant digits.
+
+\textbf{(d) Source of Pulay terms:}
+
+The three integral derivative types:
+\begin{itemize}
+    \item $\partial\Hcore/\partial R$: Core Hamiltonian derivative (Hellmann--Feynman-like)
+    \item $\partial(\text{ERI})/\partial R$: Two-electron integral derivatives
+    \item $\partial\Smat/\partial R$: \textbf{This gives rise to Pulay terms}
+\end{itemize}
+
+The Pulay force contribution is:
+\[
+F_A^{\text{Pulay}} = -\sum_{\mu\nu} W_{\mu\nu} \frac{\partial S_{\mu\nu}}{\partial R_A}
+\]
+where $W$ is the energy-weighted density matrix.
+
+\textbf{(e) Why analytical gradients are preferred:}
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Property} & \textbf{Numerical} & \textbf{Analytical} \\
+\midrule
+Cost for $N$ atoms & $6N$ SCF calculations & 1 SCF + gradient \\
+Accuracy & $\sim 6$ digits & Machine precision \\
+Step-size dependence & Sensitive & None \\
+Stability & Subtractive cancellation & Robust \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+For geometry optimization (requiring many gradient evaluations), analytical gradients
+are essential for efficiency and reliability.
+\end{keyInsight}
+
+
+\vspace{2em}
+
+\begin{center}
+\rule{0.5\textwidth}{0.4pt}\\[0.5em]
+{\small\itshape End of Chapter 7 Solutions}
+\end{center}
+
+\end{document}

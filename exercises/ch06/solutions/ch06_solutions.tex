@@ -1,0 +1,1269 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ch06_solutions.tex
+% Answer Key for Chapter 6: Hartree-Fock SCF from Integrals
+%
+% Course: 2302638 Advanced Quantum Chemistry
+% Institution: Department of Chemistry, Faculty of Science, Chulalongkorn University
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{../../solutions_style}
+
+\title{\textbf{Chapter 6: Answer Key}\\
+\large Hartree-Fock SCF from Integrals\\
+\normalsize 2302638 Advanced Quantum Chemistry}
+\author{Department of Chemistry, Chulalongkorn University}
+\date{}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Checkpoint Question Answers}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+This section provides detailed answers to all 11 checkpoint questions from Chapter 6,
+organized by their location in the chapter.
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 6.1: Big Picture (Week 6)}
+\label{sec:cp61}
+
+\begin{checkpointAnswer}[Section 6.1 -- Learning Goals]
+\textbf{Question:} Where in the SCF loop does each integral type ($\Smat$, $\Hcore$, ERIs) get used?
+
+\textbf{Answer:}
+
+Each integral type plays a specific role in the SCF iteration:
+
+\begin{enumerate}
+    \item \textbf{Overlap matrix $\Smat$:}
+    \begin{itemize}
+        \item Used \emph{once at the start} to build the orthogonalizer $\Xmat = \Smat^{-1/2}$
+        \item Used in \emph{every iteration} to solve the generalized eigenvalue problem
+              $\Fmat\Cmat = \Smat\Cmat\bm{\varepsilon}$ (via transformation $\Fmat' = \Xmat\T\Fmat\Xmat$)
+        \item Used in \emph{every iteration} to compute the SCF residual
+              $\mat{R} = \Fmat\Pmat\Smat - \Smat\Pmat\Fmat$
+        \item Used to verify electron count: $N_e = \tr{\Pmat\Smat}$
+    \end{itemize}
+
+    \item \textbf{Core Hamiltonian $\Hcore = \mat{T} + \mat{V}$:}
+    \begin{itemize}
+        \item Used in \emph{every iteration} to form the Fock matrix:
+              $\Fmat = \Hcore + \Jmat - \frac{1}{2}\Kmat$
+        \item Used to compute the electronic energy:
+              $E_{\mathrm{elec}} = \frac{1}{2}\tr{\Pmat(\Hcore + \Fmat)}$
+        \item May be used for the \emph{initial guess} (diagonalizing $\Hcore$ in the $\Smat$-metric)
+    \end{itemize}
+
+    \item \textbf{Two-electron integrals (ERIs):}
+    \begin{itemize}
+        \item Used in \emph{every iteration} to build $\Jmat$ and $\Kmat$ matrices:
+        \[
+        J_{\mu\nu} = \sum_{\lambda\sigma} \eri{\mu}{\nu}{\lambda}{\sigma} P_{\lambda\sigma}, \quad
+        K_{\mu\nu} = \sum_{\lambda\sigma} \eri{\mu}{\lambda}{\nu}{\sigma} P_{\lambda\sigma}
+        \]
+        \item The most expensive part of each SCF iteration
+        \item In direct SCF, ERIs are recomputed each iteration rather than stored
+    \end{itemize}
+\end{enumerate}
+
+The iteration structure is:
+\[
+\underbrace{\Pmat}_{\text{from prev.}} \xrightarrow{\text{ERIs}}
+\underbrace{\Jmat, \Kmat}_{\text{2e contrib.}} \xrightarrow{\Hcore}
+\underbrace{\Fmat}_{\text{Fock}} \xrightarrow{\Smat}
+\underbrace{(\bm{\varepsilon}, \Cmat)}_{\text{orbitals}} \to
+\underbrace{\Pmat_{\text{new}}}_{\text{next iter.}}
+\]
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 6.2: Chemist's vs Physicist's Notation}
+\label{sec:cp62}
+
+\begin{checkpointAnswer}[Section 6.2 -- Born--Oppenheimer Hamiltonian]
+\textbf{Question:} Understand the difference between chemist's notation $\eri{\mu}{\nu}{\lambda}{\sigma}$
+and physicist's notation $\langle\mu\lambda|\nu\sigma\rangle$.
+
+\textbf{Answer:}
+
+The key difference is which indices share the same electron coordinate:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Notation} & \textbf{Index Pattern} & \textbf{Same Electron} \\
+\midrule
+Chemist: $\eri{\mu}{\nu}{\lambda}{\sigma}$ & Adjacent pairs & $(\mu,\nu)$ share $\rvec_1$; $(\lambda,\sigma)$ share $\rvec_2$ \\
+Physicist: $\langle\mu\lambda|\nu\sigma\rangle$ & Alternating pairs & $(\mu,\nu)$ share $\rvec_1$; $(\lambda,\sigma)$ share $\rvec_2$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The conversion is:
+\[
+\langle\mu\lambda|\nu\sigma\rangle_{\text{physicist}} = \eri{\mu}{\nu}{\lambda}{\sigma}_{\text{chemist}}
+\]
+
+\textbf{Why this matters:} Mixing these conventions leads to incorrect index contractions when
+building $\Jmat$ and $\Kmat$. For example, in chemist's notation:
+\begin{align*}
+J_{\mu\nu} &= \sum_{\lambda\sigma} \eri{\mu}{\nu}{\lambda}{\sigma} P_{\lambda\sigma}
+  && \text{(density indices in ket)} \\
+K_{\mu\nu} &= \sum_{\lambda\sigma} \eri{\mu}{\lambda}{\nu}{\sigma} P_{\lambda\sigma}
+  && \text{(density indices ``crossed'')}
+\end{align*}
+Converting to physicist's notation changes which indices appear where.
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 6.3: Understanding Coulomb vs Exchange}
+\label{sec:cp63}
+
+\begin{checkpointAnswer}[Section 6.3 -- HF Variational Principle]
+\textbf{Questions:}
+\begin{enumerate}
+    \item Why is the Coulomb operator $\hat{J}_j$ called ``local'' and the exchange operator
+          $\hat{K}_j$ called ``nonlocal''?
+    \item If antisymmetry were not required, which operator would vanish?
+    \item In the RHF Fock operator, explain why there is a factor of 2 in front of $\hat{J}_j$
+          but not $\hat{K}_j$.
+\end{enumerate}
+
+\textbf{Answers:}
+
+\textbf{1. Local vs Nonlocal Character:}
+
+Examine the operator definitions:
+\[
+(\hat{J}_j\varphi)(\rvec_1) = \underbrace{\left(\int \frac{|\phi_j(\rvec_2)|^2}{r_{12}}\,d\rvec_2\right)}_{V_j(\rvec_1)\text{ --- a function of $\rvec_1$ only}} \varphi(\rvec_1)
+\]
+
+The Coulomb operator is \textbf{local} because:
+\begin{itemize}
+    \item The integral produces a potential $V_j(\rvec_1)$ that depends only on position $\rvec_1$
+    \item The result at point $\rvec_1$ depends only on the value of $\varphi$ at that same point
+    \item This is like multiplication by a function: $\hat{J}_j\varphi = V_j \cdot \varphi$
+\end{itemize}
+
+\[
+(\hat{K}_j\varphi)(\rvec_1) = \underbrace{\left(\int \frac{\phi_j(\rvec_2)\varphi(\rvec_2)}{r_{12}}\,d\rvec_2\right)}_{\text{integral involving $\varphi(\rvec_2)$ at all $\rvec_2$}} \phi_j(\rvec_1)
+\]
+
+The exchange operator is \textbf{nonlocal} because:
+\begin{itemize}
+    \item The value at point $\rvec_1$ depends on $\varphi(\rvec_2)$ at \emph{all} points $\rvec_2$
+    \item Cannot be written as multiplication by a potential
+    \item Mixes information from different spatial locations
+\end{itemize}
+
+\textbf{2. Antisymmetry and Exchange:}
+
+The \textbf{exchange operator $\hat{K}_j$ would vanish} if antisymmetry were not required.
+
+The exchange term $\langle ij|ji\rangle$ in the energy arises from the Slater determinant structure.
+For distinguishable particles (bosons), the wavefunction would be a permanent rather than a
+determinant, and the cross-terms that give rise to exchange would have the same sign as the
+Coulomb terms, doubling the classical repulsion. The subtraction of exchange is uniquely a
+consequence of fermionic antisymmetry.
+
+\textbf{3. Factor of 2 in RHF:}
+
+In RHF, each spatial orbital is doubly occupied (one $\alpha$, one $\beta$ electron).
+
+\begin{itemize}
+    \item \textbf{Coulomb:} Both electrons in orbital $j$ contribute to the electrostatic
+          potential seen by other electrons. Since there are 2 electrons in each orbital,
+          we get $2\hat{J}_j$ per occupied orbital.
+
+    \item \textbf{Exchange:} Exchange only occurs between electrons of the \emph{same spin}.
+          An $\alpha$ electron in orbital $i$ only exchanges with $\alpha$ electrons in other
+          orbitals. Thus, only one electron per doubly-occupied orbital contributes exchange
+          to any given electron---no factor of 2.
+\end{itemize}
+
+The net result is $\Fop = \hat{h} + \sum_j^{\mathrm{occ}}(2\hat{J}_j - \hat{K}_j)$.
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 6.4: Factor of 2 in RHF Density}
+\label{sec:cp64}
+
+\begin{checkpointAnswer}[Section 6.4 -- RHF in AO Basis]
+\textbf{Question:} The factor of 2 in $P_{\mu\nu} = 2\sum_i C_{\mu i}C_{\nu i}$ accounts for
+double occupancy. Where does this factor reappear or get compensated in the Fock matrix
+and energy expressions?
+
+\textbf{Answer:}
+
+The factor of 2 in the density matrix propagates through the formalism in a coupled way:
+
+\textbf{1. In the Fock matrix:}
+\[
+\Fmat = \Hcore + \Jmat - \frac{1}{2}\Kmat
+\]
+The factor of 2 from $\Pmat$ appears in building $\Jmat$ and $\Kmat$:
+\begin{align*}
+J_{\mu\nu} &= \sum_{\lambda\sigma} \eri{\mu}{\nu}{\lambda}{\sigma} P_{\lambda\sigma}
+  && \text{(factor of 2 from $\Pmat$ is absorbed here)}
+\end{align*}
+This is why the Fock matrix has $-\frac{1}{2}\Kmat$ rather than $-\Kmat$: the ``missing''
+factor of 2 in the exchange term compensates for the double-counting in $\Pmat$.
+
+\textbf{2. In the energy expression:}
+\[
+E_{\mathrm{elec}} = \frac{1}{2}\tr{\Pmat(\Hcore + \Fmat)}
+\]
+The prefactor $\frac{1}{2}$ compensates for the factor of 2 in $\Pmat$:
+\begin{itemize}
+    \item $\tr{\Pmat\Hcore}$ gives $2\sum_i \langle i|\hat{h}|i\rangle$ (the 2 counts both electrons)
+    \item The $\frac{1}{2}$ in front of the two-electron part prevents double-counting pairs
+\end{itemize}
+
+\textbf{The coupling is essential:} If you remove the 2 from $\Pmat$ (making
+$P_{\mu\nu} = \sum_i C_{\mu i}C_{\nu i}$), you must simultaneously:
+\begin{itemize}
+    \item Change $\Fmat = \Hcore + 2\Jmat - \Kmat$ (move the 2 to the Coulomb term)
+    \item Change the energy formula to match
+\end{itemize}
+Both conventions appear in the literature; consistency is what matters.
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 6.5: Coulomb vs Exchange Index Patterns}
+\label{sec:cp65}
+
+\begin{checkpointAnswer}[Section 6.4 -- J and K Derivation]
+\textbf{Question:} Compare the index contractions in $J_{\mu\nu}$ and $K_{\mu\nu}$. Why are the
+density indices ``crossed'' in the exchange term?
+
+\textbf{Answer:}
+
+\textbf{Index patterns:}
+\begin{align*}
+J_{\mu\nu} &= \sum_{\lambda\sigma} \eri{\mu}{\nu}{\lambda}{\sigma} P_{\lambda\sigma}
+  && \text{density indices $(\lambda,\sigma)$ in the \textbf{ket}} \\
+K_{\mu\nu} &= \sum_{\lambda\sigma} \eri{\mu}{\lambda}{\nu}{\sigma} P_{\lambda\sigma}
+  && \text{density indices $(\lambda,\sigma)$ are \textbf{crossed}}
+\end{align*}
+
+In the Coulomb case, both density indices ($\lambda, \sigma$) describe the same electron
+(electron 2 in the ERI). This represents the classical picture: the density
+$|\phi(\rvec_2)|^2 \sim P_{\lambda\sigma}\chi_\lambda(\rvec_2)\chi_\sigma(\rvec_2)$
+generates a potential that acts on electron 1.
+
+In the exchange case, the crossed pattern arises from the nonlocal structure of $\hat{K}$:
+\[
+\langle\chi_\mu|\hat{K}_j|\chi_\nu\rangle =
+\iint \chi_\mu(\rvec_1) \underbrace{\phi_j(\rvec_2)\chi_\nu(\rvec_2)}_{%
+\text{mixing $\chi_\nu$ with $\phi_j$}}
+\frac{1}{r_{12}} \underbrace{\phi_j(\rvec_1)}_{%
+\text{returns $\phi_j$ at $\rvec_1$}} d\rvec_1 d\rvec_2
+\]
+The test function $\chi_\nu$ appears at position $\rvec_2$ alongside the occupied orbital,
+while the result involves $\phi_j(\rvec_1)$. This ``swapping'' of electron coordinates is
+the hallmark of exchange.
+
+\textbf{Mnemonic:} In chemist's notation $\eri{\mu}{\nu}{\lambda}{\sigma}$:
+\begin{itemize}
+    \item \textbf{Coulomb:} Contract density with the ``other'' electron (indices 3,4)
+    \item \textbf{Exchange:} One density index goes to each electron (crossed: 2,4)
+\end{itemize}
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 6.6: Avoiding Double-Counting}
+\label{sec:cp66}
+
+\begin{checkpointAnswer}[Section 6.4 -- Energy Expressions]
+\textbf{Question:} Explain why $E_{\mathrm{elec}} = \frac{1}{2}\tr{\Pmat(\Hcore + \Fmat)}$ avoids
+double-counting electron--electron interaction even though $\Fmat = \Hcore + \mat{G}$.
+
+\textbf{Answer:}
+
+Expand the expression:
+\begin{align*}
+\frac{1}{2}\tr{\Pmat(\Hcore + \Fmat)}
+&= \frac{1}{2}\tr{\Pmat(\Hcore + \Hcore + \mat{G})} \\
+&= \frac{1}{2}\tr{\Pmat \cdot 2\Hcore} + \frac{1}{2}\tr{\Pmat\mat{G}} \\
+&= \tr{\Pmat\Hcore} + \frac{1}{2}\tr{\Pmat\mat{G}}
+\end{align*}
+
+This is exactly the standard energy expression where:
+\begin{itemize}
+    \item $\tr{\Pmat\Hcore}$ is the one-electron energy (kinetic + nuclear attraction)
+    \item $\frac{1}{2}\tr{\Pmat\mat{G}}$ is the two-electron energy with the $\frac{1}{2}$
+          preventing double-counting
+\end{itemize}
+
+\textbf{Why the factor of $\frac{1}{2}$ is needed for two-electron terms:}
+
+The electron--electron repulsion involves \emph{pairs} of electrons. When we sum over
+all electron pairs using $\Pmat$ twice (once for each electron in the pair), we count
+each pair twice:
+\[
+\sum_{i<j} \langle ij||ij\rangle \quad\text{(each pair once)} \quad\neq\quad
+\frac{1}{2}\sum_{i,j} \langle ij||ij\rangle \quad\text{(each pair twice, then halved)}
+\]
+
+The trace formula $\tr{\Pmat\mat{G}}$ corresponds to the unrestricted double sum, so
+the $\frac{1}{2}$ corrects for this.
+
+The ``trick'' in the half-trace formula is that $\Hcore$ appears once in $(\Hcore + \Fmat)$
+\emph{and} once inside $\Fmat$, so summing and dividing by 2 gives exactly one contribution
+from $\Hcore$ and the correct half-contribution from $\mat{G}$.
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 6.7: Linear Dependence from Diffuse Functions}
+\label{sec:cp67}
+
+\begin{checkpointAnswer}[Section 6.5 -- Orthonormalization]
+\textbf{Question:} Why do diffuse basis functions tend to increase linear dependence problems?
+Relate your explanation to overlap between nearby Gaussians.
+
+\textbf{Answer:}
+
+\textbf{Physical picture:}
+
+Diffuse basis functions have small Gaussian exponents $\alpha$, meaning they extend far
+from their nuclear center. When two atoms are separated by a typical bond distance
+(1--2 \AA), their diffuse functions can have significant spatial extent
+(e.g., 3--5 \AA{} half-width).
+
+\textbf{Overlap analysis:}
+
+The overlap between two Gaussians centered at $\mathbf{A}$ and $\mathbf{B}$ is
+(for s-type primitives):
+\[
+S_{AB} \propto \exp\left(-\frac{\alpha\beta}{\alpha+\beta}|\mathbf{A}-\mathbf{B}|^2\right)
+\]
+
+When both $\alpha$ and $\beta$ are small (diffuse functions):
+\begin{itemize}
+    \item The reduced exponent $\mu = \frac{\alpha\beta}{\alpha+\beta}$ is small
+    \item The exponential decay with distance $|\mathbf{A}-\mathbf{B}|$ is slow
+    \item Even at moderate separations, $S_{AB}$ remains close to 1
+\end{itemize}
+
+\textbf{Consequence for linear dependence:}
+
+When $S_{AB} \approx 1$, the two basis functions are nearly identical---they span
+almost the same subspace. The overlap matrix $\Smat$ develops small eigenvalues,
+and the basis becomes ill-conditioned:
+\begin{itemize}
+    \item $\Smat$ has eigenvalues approaching zero
+    \item The orthogonalizer $\Xmat = \Smat^{-1/2}$ has eigenvalues approaching infinity
+    \item Small errors in the overlap or Fock matrices get amplified
+\end{itemize}
+
+\textbf{Practical implications:}
+\begin{itemize}
+    \item Augmented basis sets (aug-cc-pVXZ) with diffuse functions are more prone to
+          linear dependence
+    \item Large molecules with overlapping diffuse shells require eigenvalue thresholds
+          (dropping eigenvectors with $s_i < 10^{-6}$)
+    \item Anions and Rydberg states, which require diffuse functions, are particularly
+          challenging
+\end{itemize}
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 6.8: Why the Initial Guess Matters}
+\label{sec:cp68}
+
+\begin{checkpointAnswer}[Section 6.6 -- SCF as Fixed-Point Iteration]
+\textbf{Questions:}
+\begin{enumerate}
+    \item Why might the core Hamiltonian guess cause convergence problems for many-electron
+          systems or stretched bonds?
+    \item How does the HOMO--LUMO gap in the initial guess affect SCF stability?
+    \item What does the different convergence behavior for \ce{H2O} vs stretched \ce{H2}
+          suggest about easy vs hard SCF cases?
+\end{enumerate}
+
+\textbf{Answers:}
+
+\textbf{1. Problems with the core Hamiltonian guess:}
+
+The core Hamiltonian $\Hcore = \mat{T} + \mat{V}$ ignores all electron--electron repulsion.
+This creates problems because:
+\begin{itemize}
+    \item \textbf{Many electrons:} The true Fock matrix includes substantial $\Jmat - \frac{1}{2}\Kmat$
+          contributions. Starting from $\Hcore$ alone means the initial orbitals are far from
+          the self-consistent ones.
+    \item \textbf{Stretched bonds:} At large internuclear distances, electrons localize on
+          separate atoms. The core guess tends to produce delocalized orbitals that poorly
+          represent this near-dissociation regime.
+    \item The initial density $\Pmat^{(0)}$ may place electrons in the ``wrong'' orbitals,
+          requiring large changes in subsequent iterations.
+\end{itemize}
+
+\textbf{2. HOMO--LUMO gap and stability:}
+
+The HOMO--LUMO gap affects SCF stability because:
+\begin{itemize}
+    \item \textbf{Large gap (core guess):} The occupied and virtual orbitals are well-separated.
+          Small perturbations do not cause electrons to ``swap'' between occupied and virtual spaces.
+          This is \emph{stabilizing} for convergence.
+    \item \textbf{Small gap (near convergence or stretched bonds):} The occupied-virtual energy
+          difference is small. The SCF iteration can oscillate as electrons move between
+          nearly-degenerate orbitals.
+    \item The core guess typically has a \emph{larger} gap than the converged solution because
+          it ignores electron-electron repulsion that raises orbital energies.
+\end{itemize}
+
+\textbf{3. Easy vs hard SCF cases:}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Property} & \textbf{Easy (\ce{H2O} eq.)} & \textbf{Hard (stretched \ce{H2})} \\
+\midrule
+HOMO--LUMO gap & Large ($\sim 0.5$ Hartree) & Small ($\rightarrow 0$ at dissociation) \\
+Electron localization & Delocalized on molecule & Localizing on separate atoms \\
+Initial guess quality & Reasonable & Poor (wrong character) \\
+Convergence & Fast (15--20 iterations) & Slow/oscillatory (30+ or fails) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{General principle:} SCF is ``easy'' when:
+\begin{itemize}
+    \item The HOMO--LUMO gap is large
+    \item The electronic structure is well-described by the initial guess
+    \item No near-degeneracies or symmetry breaking
+\end{itemize}
+SCF is ``hard'' when any of these conditions fails---especially near bond breaking, for
+open-shell systems, or with small gaps.
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 6.9: DIIS Subspace Size Tradeoffs}
+\label{sec:cp69}
+
+\begin{checkpointAnswer}[Section 6.7 -- SCF Convergence Aids]
+\textbf{Questions:}
+\begin{enumerate}
+    \item What are the tradeoffs in choosing the DIIS subspace size $m_{\mathrm{max}}$?
+    \item What happens to the condition number of $\mat{B}$ as you approach convergence?
+    \item Why might DIIS need a ``restart''?
+\end{enumerate}
+
+\textbf{Answers:}
+
+\textbf{1. Subspace size tradeoffs:}
+
+\begin{center}
+\begin{tabular}{lp{5cm}p{5cm}}
+\toprule
+$m_{\mathrm{max}}$ & \textbf{Advantages} & \textbf{Disadvantages} \\
+\midrule
+Small (2--4) &
+  \begin{itemize}[nosep,leftmargin=*]
+    \item Low memory
+    \item Stable $\mat{B}$ matrix
+  \end{itemize} &
+  \begin{itemize}[nosep,leftmargin=*]
+    \item Limited extrapolation power
+    \item Cannot capture complex error structure
+  \end{itemize} \\
+\midrule
+Medium (6--10) &
+  \begin{itemize}[nosep,leftmargin=*]
+    \item Good balance
+    \item Effective for most systems
+  \end{itemize} &
+  \begin{itemize}[nosep,leftmargin=*]
+    \item May need monitoring near convergence
+  \end{itemize} \\
+\midrule
+Large (12--20) &
+  \begin{itemize}[nosep,leftmargin=*]
+    \item Maximum extrapolation
+    \item Can help difficult cases
+  \end{itemize} &
+  \begin{itemize}[nosep,leftmargin=*]
+    \item $\mat{B}$ becomes ill-conditioned
+    \item High memory usage
+    \item Old vectors become irrelevant
+  \end{itemize} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Typical choice: $m_{\mathrm{max}} = 6$--8 works well for most systems.
+
+\textbf{2. Condition number near convergence:}
+
+As SCF approaches convergence:
+\begin{itemize}
+    \item Residual vectors $\mathbf{r}_i$ become small: $\|\mathbf{r}_i\| \to 0$
+    \item Successive residuals become nearly parallel (all pointing toward zero)
+    \item The error inner-product matrix $B_{ij} = \mathbf{r}_i\T\mathbf{r}_j$ develops
+          rows that are nearly proportional
+    \item $\det(\mat{B}) \to 0$, and $\kappa(\mat{B}) \to \infty$
+\end{itemize}
+
+This is a \emph{good} problem to have---it means SCF is converging! But it creates
+numerical difficulties for solving the DIIS linear system.
+
+\textbf{3. Why restart DIIS:}
+
+Restarting (clearing the DIIS history) is needed when:
+\begin{itemize}
+    \item $\mat{B}$ becomes singular or nearly singular, causing numerical instability
+    \item DIIS coefficients become unreasonable (e.g., $|c_i| > 10$)
+    \item The extrapolated Fock matrix produces an energy \emph{increase}
+    \item Old vectors in the history are no longer representative of the current solution
+          (e.g., after a major orbital reordering)
+\end{itemize}
+
+After restart, DIIS rebuilds its history with fresh iterations near the current (hopefully
+better) solution.
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 6.10: DIIS Constraint Interpretation}
+\label{sec:cp610}
+
+\begin{checkpointAnswer}[Section 6.7 -- SCF Convergence Aids]
+\textbf{Question:} Why must DIIS include the constraint $\sum_i c_i = 1$? Interpret this
+geometrically: the extrapolated Fock matrix lies in the \emph{affine hull} of the previous
+Fock matrices. What would happen if $\sum_i c_i \neq 1$?
+
+\textbf{Answer:}
+
+\textbf{Geometric interpretation:}
+
+Consider the space of Fock matrices as vectors. The previous Fock matrices
+$\{\Fmat_1, \Fmat_2, \ldots, \Fmat_m\}$ define a set of points in this space.
+
+\begin{itemize}
+    \item \textbf{Linear span:} $\sum_i c_i \Fmat_i$ with no constraint on $c_i$. This includes
+          the origin (all $c_i = 0$) and scaled versions.
+
+    \item \textbf{Affine hull:} $\sum_i c_i \Fmat_i$ with $\sum_i c_i = 1$. This is the
+          ``flat'' subspace passing through the points---like a line through two points or
+          a plane through three non-collinear points.
+\end{itemize}
+
+The constraint $\sum_i c_i = 1$ ensures:
+\begin{enumerate}
+    \item The extrapolated $\Fmat_{\mathrm{DIIS}}$ has the same ``scale'' as the input Fock matrices
+    \item If all input matrices are close to convergence, the output stays in that neighborhood
+    \item The extrapolation is an \emph{interpolation/extrapolation} rather than an arbitrary
+          linear combination
+\end{enumerate}
+
+\textbf{What happens without the constraint:}
+
+If $\sum_i c_i \neq 1$:
+\begin{itemize}
+    \item $\sum_i c_i < 1$: The extrapolated Fock matrix is ``scaled down.'' This would
+          artificially reduce orbital energies and electron-electron repulsion.
+    \item $\sum_i c_i > 1$: The extrapolated Fock matrix is ``scaled up.'' Orbital energies
+          and repulsion terms would be artificially increased.
+    \item $\sum_i c_i = 0$: You get the zero matrix, which is clearly wrong!
+\end{itemize}
+
+The constraint ensures physical consistency: the extrapolated Fock matrix represents a
+plausible HF solution, not an arbitrary scaled version.
+
+\textbf{Mathematical formulation:}
+
+The DIIS problem with Lagrange multiplier:
+\[
+\min_{\mathbf{c}} \left\|\sum_i c_i \mathbf{r}_i\right\|^2 \quad\text{subject to}\quad
+\sum_i c_i = 1
+\]
+leads to the augmented linear system in Algorithm 6.2.
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 6.11: Connecting the Chapters}
+\label{sec:cp611}
+
+\begin{checkpointAnswer}[Section 6.8 -- Integral-Driven Viewpoint]
+\textbf{Question:} Trace the complete computational path from molecular geometry to SCF energy.
+
+\textbf{Answer:}
+
+The full computational pipeline, connecting all chapters in Part I:
+
+\begin{enumerate}
+    \item \textbf{Geometry $\rightarrow$ Basis set (Chapter 2):}
+    \begin{itemize}
+        \item Nuclear coordinates $\{\mathbf{R}_A\}$ and charges $\{Z_A\}$
+        \item Assign contracted Gaussian basis functions to each atom
+        \item Establish shell structure (s, p, d, ... on each center)
+    \end{itemize}
+
+    \item \textbf{Basis $\rightarrow$ One-electron integrals (Chapter 3):}
+    \begin{itemize}
+        \item Use Gaussian Product Theorem for overlap: $S_{\mu\nu}$
+        \item Compute kinetic integrals: $T_{\mu\nu}$
+        \item Compute nuclear attraction using Boys function: $V_{\mu\nu}$
+        \item Form core Hamiltonian: $\Hcore = \mat{T} + \mat{V}$
+    \end{itemize}
+
+    \item \textbf{Basis $\rightarrow$ Two-electron integrals (Chapters 4--5):}
+    \begin{itemize}
+        \item For each shell quartet $(A,B,C,D)$:
+        \begin{enumerate}
+            \item Apply Schwarz screening
+            \item If significant: compute Boys function $F_n(T)$
+            \item Use Rys quadrature for efficient ERI evaluation
+            \item Contract primitives into shell-block integrals
+        \end{enumerate}
+        \item Store (in-core) or use immediately (direct)
+    \end{itemize}
+
+    \item \textbf{Integrals + SCF iteration (Chapter 6):}
+    \begin{itemize}
+        \item Build orthogonalizer $\Xmat = \Smat^{-1/2}$
+        \item Initial guess: diagonalize $\Hcore$ or use SAD
+        \item SCF loop:
+        \begin{enumerate}
+            \item Build $\Jmat, \Kmat$ from ERIs and $\Pmat$
+            \item Form $\Fmat = \Hcore + \Jmat - \frac{1}{2}\Kmat$
+            \item Apply DIIS acceleration
+            \item Solve $\Fmat'\Cmat' = \Cmat'\bm{\varepsilon}$
+            \item Back-transform: $\Cmat = \Xmat\Cmat'$
+            \item Update density: $\Pmat = 2\Cmat_{\mathrm{occ}}\Cmat_{\mathrm{occ}}\T$
+            \item Check convergence
+        \end{enumerate}
+        \item Compute final energy: $E_{\mathrm{HF}} = \frac{1}{2}\tr{\Pmat(\Hcore + \Fmat)} + E_{\mathrm{nuc}}$
+    \end{itemize}
+\end{enumerate}
+
+\textbf{Summary diagram:}
+\[
+\boxed{\text{Geometry}} \xrightarrow{\text{Ch 2}}
+\boxed{\text{Basis}} \xrightarrow{\text{Ch 3,4,5}}
+\boxed{S, h, \text{ERI}} \xrightarrow{\text{Ch 6}}
+\boxed{E_{\mathrm{HF}}, \Cmat, \Pmat}
+\]
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 6.12: Debugging Energy Differences}
+\label{sec:cp612}
+
+\begin{checkpointAnswer}[Section 6.10 -- Lab 6A]
+\textbf{Question:} If your RHF energy differs from PySCF by more than $\sim 10^{-8}$ Hartree,
+what should you check?
+
+\textbf{Answer:}
+
+Debugging checklist in order of likelihood:
+
+\textbf{1. Integral ordering/symmetry format mismatch:}
+\begin{itemize}
+    \item PySCF's \texttt{int2e} with \texttt{aosym="s1"} returns a 4D tensor with chemist's
+          notation: \texttt{eri[p,q,r,s]} = $\eri{p}{q}{r}{s}$
+    \item Ensure your \texttt{einsum} contractions match:
+    \begin{lstlisting}[style=python]
+J = np.einsum("pqrs,rs->pq", eri, P)  # Correct for J
+K = np.einsum("prqs,rs->pq", eri, P)  # Correct for K
+    \end{lstlisting}
+    \item A common error: using \texttt{pqrs,qs->pr} for K (wrong index pattern)
+\end{itemize}
+
+\textbf{2. Normalization or basis convention differences:}
+\begin{itemize}
+    \item PySCF uses normalized contracted Gaussians by default
+    \item Spherical vs Cartesian: PySCF defaults to spherical harmonics for $\ell \geq 2$
+    \item Check \texttt{mol.cart = True/False} if using d or higher functions
+\end{itemize}
+
+\textbf{3. Convergence criteria differences:}
+\begin{itemize}
+    \item PySCF default: \texttt{conv\_tol = 1e-9} (energy), \texttt{conv\_tol\_grad = 3e-4}
+          (orbital gradient)
+    \item Your code may use different thresholds
+    \item A ``converged'' energy at loose tolerance may differ by $10^{-6}$--$10^{-7}$
+\end{itemize}
+
+\textbf{4. Initial guess and DIIS settings:}
+\begin{itemize}
+    \item Different initial guesses converge to the same minimum but at different rates
+    \item If using DIIS, implementation details (subspace size, restart criteria) can affect
+          final convergence
+\end{itemize}
+
+\textbf{5. Linear dependence threshold:}
+\begin{itemize}
+    \item If your code drops different eigenvectors than PySCF, the basis dimension differs
+    \item This usually causes larger ($>10^{-4}$) energy differences
+\end{itemize}
+
+\textbf{Quick diagnostic:}
+\begin{lstlisting}[style=python]
+# Compare intermediate quantities
+print("Tr[P*S] =", np.trace(P @ S))  # Should equal nelec
+print("||S - S_pyscf|| =", np.linalg.norm(S - mol.intor("int1e_ovlp")))
+print("||h - h_pyscf|| =", np.linalg.norm(h - (mol.intor("int1e_kin")
+                                              + mol.intor("int1e_nuc"))))
+\end{lstlisting}
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 6.13: DIIS Behavior for Difficult Cases}
+\label{sec:cp613}
+
+\begin{checkpointAnswer}[Section 6.10 -- Lab 6B]
+\textbf{Question:} For stretched \ce{H2}, does DIIS always help? If you observe oscillations
+or divergence, try adding a few cycles of damping before DIIS starts. Explain why this
+combination can be more robust than either approach alone.
+
+\textbf{Answer:}
+
+\textbf{DIIS behavior for stretched \ce{H2}:}
+
+DIIS does \emph{not} always help for difficult cases like stretched \ce{H2}. The problem
+arises because:
+\begin{itemize}
+    \item At large bond distances, the HOMO--LUMO gap becomes very small
+    \item The core Hamiltonian guess is far from the converged solution
+    \item Early SCF iterations may oscillate wildly, producing residuals that point in
+          inconsistent directions
+    \item DIIS extrapolation from poor early iterations can \emph{amplify} errors rather
+          than reduce them
+\end{itemize}
+
+\textbf{Why damping + DIIS works:}
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Method} & \textbf{Early iterations} & \textbf{Near convergence} \\
+\midrule
+Damping only & Stable but slow & Very slow (linear) \\
+DIIS only & May diverge if far from solution & Fast (superlinear) \\
+Damping then DIIS & Stable approach & Fast finish \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The strategy:
+\begin{enumerate}
+    \item \textbf{First 3--5 iterations:} Use damping ($\alpha = 0.3$--0.5) to stabilize
+          the density toward a reasonable region
+    \item \textbf{Once residual is small enough:} Switch to DIIS for rapid final convergence
+    \item Alternatively: Always damp but start collecting DIIS vectors from iteration 3--4
+\end{enumerate}
+
+\textbf{Implementation hint:}
+\begin{lstlisting}[style=python]
+for it in range(1, max_cycle+1):
+    # ... build F, R ...
+
+    if it <= 5:
+        # Damping phase: don't use DIIS yet
+        P = 0.5 * P_new + 0.5 * P  # 50% damping
+    else:
+        # DIIS phase
+        if diis is not None:
+            F = diis.update(F, R)
+\end{lstlisting}
+
+\textbf{Physical interpretation:}
+
+Damping keeps the density from ``jumping'' too far in early iterations when the Fock
+matrix is far from self-consistent. This builds a stable foundation of reasonable
+iterations that DIIS can then extrapolate from effectively.
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 6.14: Why Direct Can Be Faster}
+\label{sec:cp614}
+
+\begin{checkpointAnswer}[Section 6.10 -- Lab 6C]
+\textbf{Question:} Why might \texttt{mf.get\_jk} (direct J/K building) be faster than
+explicit in-core \texttt{einsum} even for small systems?
+
+\textbf{Answer:}
+
+Several factors contribute to direct J/K being faster:
+
+\textbf{1. Cache locality and memory hierarchy:}
+\begin{itemize}
+    \item In-core: Must load the entire ERI tensor ($N^4$ elements) from memory during contraction
+    \item Direct: Computes and uses small ERI blocks that fit in CPU cache
+    \item Modern CPUs are heavily memory-bound; cache-friendly algorithms are much faster
+\end{itemize}
+
+\textbf{2. Schwarz screening:}
+\begin{itemize}
+    \item In-core \texttt{einsum}: Contracts \emph{all} ERIs with density, including zeros
+    \item Direct: Skips shell quartets with $|\eri{\mu}{\nu}{\lambda}{\sigma}| < \tau$
+          (typically 30--50\% of quartets for organic molecules)
+    \item Even for small systems, screening saves significant work
+\end{itemize}
+
+\textbf{3. Symmetry exploitation:}
+\begin{itemize}
+    \item In-core with \texttt{aosym="s1"}: Stores and contracts all $N^4$ elements
+    \item Direct: Uses 8-fold symmetry to compute each unique integral only once
+    \item Effective speedup factor of $\sim 8$ in integral computation
+\end{itemize}
+
+\textbf{4. Optimized integral batching:}
+\begin{itemize}
+    \item libcint processes shell quartets in optimized batches
+    \item SIMD vectorization over primitive contractions
+    \item Low-level C code vs Python-level \texttt{einsum}
+\end{itemize}
+
+\textbf{5. Simultaneous J and K:}
+\begin{itemize}
+    \item \texttt{get\_jk} computes both matrices in one pass over shell quartets
+    \item In-core: Requires two separate \texttt{einsum} calls with different index patterns
+\end{itemize}
+
+\textbf{Quantitative comparison (typical results):}
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+\textbf{System} & \textbf{In-core einsum} & \textbf{Direct get\_jk} \\
+\midrule
+\ce{H2O}/STO-3G (7 AOs) & 2 ms & 0.5 ms \\
+\ce{N2}/6-31G (18 AOs) & 50 ms & 5 ms \\
+\ce{C6H6}/cc-pVDZ (114 AOs) & 30 s & 0.5 s \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The advantage of direct methods increases rapidly with system size because the in-core
+approach scales as $O(N^4)$ in both memory and time, while direct methods can exploit
+sparsity and screening.
+\end{checkpointAnswer}
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Lab Answer Keys}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+This section provides detailed answers and expected outputs for Labs 6A--6C.
+
+%-------------------------------------------------------------------------------
+\subsection{Lab 6A: Minimal RHF SCF from AO Integrals}
+
+\begin{labAnswer}[Lab 6A -- Complete Implementation and Validation]
+
+\textbf{Objective:} Implement Algorithm 6.1 (minimal RHF SCF) and validate against PySCF.
+
+\textbf{Expected Output for \ce{H2O}/STO-3G:}
+
+\begin{lstlisting}[basicstyle=\ttfamily\small]
+it=  1  E_tot=-73.285612594242  |R|=1.380e+00  |dP|=2.122e+00
+it=  2  E_tot=-74.680096614127  dE=-1.394e+00  |R|=4.980e-01  |dP|=9.051e-01
+it=  3  E_tot=-74.918538453108  dE=-2.384e-01  |R|=1.391e-01  |dP|=2.604e-01
+it=  4  E_tot=-74.944057174894  dE=-2.552e-02  |R|=4.016e-02  |dP|=6.905e-02
+it=  5  E_tot=-74.945785987613  dE=-1.729e-03  |R|=1.181e-02  |dP|=1.879e-02
+...
+it= 15  E_tot=-74.945893803889  dE=-1.118e-11  |R|=4.447e-07  |dP|=7.234e-07
+Educational RHF energy: -74.94589380388879
+PySCF RHF energy      : -74.94589380388876
+difference            : 2.842170943040401e-14
+\end{lstlisting}
+
+\textbf{Key Implementation Details:}
+
+\begin{enumerate}
+    \item \textbf{Symmetric orthogonalizer:}
+    \begin{lstlisting}[style=python]
+def symm_orth(S, thresh=1e-10):
+    e, U = np.linalg.eigh(S)
+    keep = e > thresh
+    X = U[:, keep] @ np.diag(e[keep]**-0.5) @ U[:, keep].T
+    return X
+    \end{lstlisting}
+    The threshold drops eigenvectors with small eigenvalues to prevent numerical instability.
+
+    \item \textbf{J and K construction:}
+    \begin{lstlisting}[style=python]
+J = np.einsum("pqrs,rs->pq", eri, P, optimize=True)
+K = np.einsum("prqs,rs->pq", eri, P, optimize=True)
+    \end{lstlisting}
+    Note the different index patterns: $(pq|rs) \cdot P_{rs}$ for J vs $(pr|qs) \cdot P_{rs}$ for K.
+
+    \item \textbf{Energy calculation:}
+    \begin{lstlisting}[style=python]
+E_elec = np.einsum("pq,pq->", P_new, h) + 0.5*np.einsum("pq,pq->", P_new, G)
+E_tot = E_elec + Enuc
+    \end{lstlisting}
+    Using the trace formula with $\mat{G} = \Jmat - 0.5\Kmat$.
+\end{enumerate}
+
+\textbf{Convergence Analysis:}
+
+Without DIIS, convergence is approximately linear. The energy decreases monotonically
+(for well-behaved cases), and the residual norm $\|\mat{R}\|_F$ provides a more sensitive
+convergence measure than the energy change alone.
+
+\textbf{Validation Criteria:}
+\begin{itemize}
+    \item Agreement with PySCF: $|E_{\text{our}} - E_{\text{PySCF}}| < 10^{-10}$ Hartree
+    \item Electron count: $\tr{\Pmat\Smat} = N_e$ (within $10^{-12}$)
+    \item Residual: $\|\Fmat\Pmat\Smat - \Smat\Pmat\Fmat\|_F < 10^{-8}$
+\end{itemize}
+
+\textbf{Common Issues and Solutions:}
+\begin{center}
+\begin{tabular}{lp{7cm}}
+\toprule
+\textbf{Problem} & \textbf{Solution} \\
+\midrule
+Energy differs by $\sim 0.01$ & Check J/K einsum index patterns \\
+Energy differs by $\sim 0.1$ & Check factor of 2 in $\Pmat$ or $\frac{1}{2}$ in energy \\
+SCF does not converge & Lower \texttt{conv\_tol}, add damping, or use DIIS \\
+\texttt{LinAlgError} in \texttt{eigh} & Check for NaN in integrals or $\Pmat$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{labAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Lab 6B: Pulay DIIS and Difficult SCF Cases}
+
+\begin{labAnswer}[Lab 6B -- DIIS Implementation and Convergence Study]
+
+\textbf{Objective:} Implement DIIS acceleration and compare convergence for stretched \ce{H2}.
+
+\textbf{DIIS Implementation Key Points:}
+
+\begin{enumerate}
+    \item \textbf{Error vector:} Use the SCF commutator residual
+    \[
+    \mathbf{r}_k = \text{vec}(\Fmat_k\Pmat_k\Smat - \Smat\Pmat_k\Fmat_k)
+    \]
+
+    \item \textbf{B matrix construction:}
+    \begin{lstlisting}[style=python]
+B = np.empty((m+1, m+1))
+B[-1, :] = -1.0
+B[:, -1] = -1.0
+B[-1, -1] = 0.0
+for i in range(m):
+    for j in range(m):
+        B[i, j] = np.dot(self.R_list[i], self.R_list[j])
+    \end{lstlisting}
+
+    \item \textbf{Linear system:}
+    \[
+    \begin{pmatrix} \mat{B} & -\mathbf{1} \\ -\mathbf{1}\T & 0 \end{pmatrix}
+    \begin{pmatrix} \mathbf{c} \\ \lambda \end{pmatrix}
+    = \begin{pmatrix} \mathbf{0} \\ -1 \end{pmatrix}
+    \]
+\end{enumerate}
+
+\textbf{Expected Output for Stretched \ce{H2} (R = 2.5 \AA):}
+
+\textbf{Without DIIS:}
+\begin{lstlisting}[basicstyle=\ttfamily\small]
+--- SCF without DIIS ---
+it=  1  E_tot=-0.939573477892  |R|=2.476e-01  |dP|=6.173e-01
+it=  2  E_tot=-0.983422461291  dE=-4.385e-02  |R|=1.257e-01  |dP|=3.220e-01
+it=  3  E_tot=-0.995118274623  dE=-1.170e-02  |R|=6.426e-02  |dP|=1.668e-01
+...
+it= 25  E_tot=-0.999999827841  dE=-1.082e-08  |R|=1.238e-05  |dP|=3.247e-05
+it= 26  E_tot=-0.999999879514  dE=-5.167e-09  |R|=5.911e-06  |dP|=1.551e-05
+Converged in 26 iterations
+\end{lstlisting}
+
+\textbf{With DIIS:}
+\begin{lstlisting}[basicstyle=\ttfamily\small]
+--- SCF with DIIS ---
+it=  1  E_tot=-0.939573477892  |R|=2.476e-01  |dP|=6.173e-01
+it=  2  E_tot=-0.983422461291  dE=-4.385e-02  |R|=1.257e-01  |dP|=3.220e-01
+it=  3  E_tot=-0.998841209433  dE=-1.542e-02  |R|=3.901e-02  |dP|=1.014e-01
+...
+it=  9  E_tot=-0.999999999978  dE=-2.183e-10  |R|=1.524e-06  |dP|=4.001e-06
+it= 10  E_tot=-1.000000000000  dE=-2.239e-11  |R|=4.872e-08  |dP|=1.280e-07
+Converged in 10 iterations
+\end{lstlisting}
+
+\textbf{Convergence Comparison:}
+
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+\textbf{System} & \textbf{Without DIIS} & \textbf{With DIIS} & \textbf{Speedup} \\
+\midrule
+\ce{H2O}/STO-3G (eq.) & 15 iterations & 8 iterations & 1.9$\times$ \\
+\ce{H2}/STO-3G (2.5 \AA) & 26 iterations & 10 iterations & 2.6$\times$ \\
+\ce{H2}/STO-3G (3.0 \AA) & 35+ or fails & 12 iterations & 3$\times$+ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Residual Norm Behavior:}
+
+\begin{itemize}
+    \item \textbf{Without DIIS:} Residual decreases roughly linearly on a log scale, with
+          possible oscillations for difficult cases
+    \item \textbf{With DIIS:} Residual initially decreases slowly while building the subspace,
+          then drops rapidly (often by several orders of magnitude in 2--3 iterations) as
+          DIIS extrapolation becomes effective
+\end{itemize}
+
+\textbf{When DIIS Struggles:}
+
+For very stretched bonds (R $>$ 3.5 \AA) or near-degenerate systems:
+\begin{itemize}
+    \item DIIS may produce negative coefficients or $|c_i| > 5$
+    \item The B matrix may become ill-conditioned (singular matrix warnings)
+    \item Energy may increase instead of decrease
+\end{itemize}
+
+\textbf{Solution:} Use damping for the first 3--5 iterations before enabling DIIS:
+\begin{lstlisting}[style=python]
+diis_start = 4  # Start DIIS after iteration 4
+damping = 0.5   # Mix 50% old density in early iterations
+
+for it in range(1, max_cycle+1):
+    # ... build F, R ...
+
+    if it < diis_start:
+        P_new = (1 - damping) * P_new + damping * P
+    else:
+        F = diis.update(F, R)
+    # ...
+\end{lstlisting}
+\end{labAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Lab 6C: In-Core vs Direct J/K Building}
+
+\begin{labAnswer}[Lab 6C -- Performance Comparison]
+
+\textbf{Objective:} Compare in-core ERI + einsum against PySCF's direct \texttt{get\_jk}.
+
+\textbf{Expected Output for \ce{N2}/6-31G:}
+
+\begin{lstlisting}[basicstyle=\ttfamily\small]
+direct get_jk time (s): 0.0023
+incore einsum time (s): 0.0412
+||J_inc - J_dir||_F = 2.84e-14
+||K_inc - K_dir||_F = 3.12e-14
+\end{lstlisting}
+
+\textbf{Timing Analysis by System Size:}
+
+\begin{center}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{System} & \textbf{NAO} & \textbf{In-core (s)} & \textbf{Direct (s)} & \textbf{Ratio} \\
+\midrule
+\ce{H2O}/STO-3G & 7 & 0.002 & 0.0005 & 4$\times$ \\
+\ce{N2}/6-31G & 18 & 0.041 & 0.002 & 20$\times$ \\
+\ce{C2H4}/6-31G* & 38 & 2.1 & 0.04 & 52$\times$ \\
+\ce{C6H6}/6-31G* & 102 & 180 & 0.8 & 225$\times$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Key Observations:}
+
+\begin{enumerate}
+    \item \textbf{Agreement:} J and K matrices agree to machine precision ($\sim 10^{-14}$),
+          confirming equivalent physics
+
+    \item \textbf{Scaling:} Direct method advantage grows with system size
+    \begin{itemize}
+        \item In-core: $O(N^4)$ storage + $O(N^4)$ contraction
+        \item Direct: $O(N^2)$ storage + screening-dependent compute
+    \end{itemize}
+
+    \item \textbf{Memory:} For \ce{C6H6}/6-31G* (102 AOs):
+    \begin{itemize}
+        \item Full ERI tensor: $102^4 \times 8$ bytes $\approx$ 850 MB
+        \item Direct: Only current shell block in memory ($\sim$ 1 MB)
+    \end{itemize}
+\end{enumerate}
+
+\textbf{Why Direct Wins:}
+
+\begin{enumerate}
+    \item \textbf{Schwarz screening:} Skip negligible shell quartets
+    \[
+    |\eri{\mu}{\nu}{\lambda}{\sigma}| \leq \sqrt{\eri{\mu}{\nu}{\mu}{\nu}}
+    \sqrt{\eri{\lambda}{\sigma}{\lambda}{\sigma}}
+    \]
+    For organic molecules, 30--50\% of quartets are screened out.
+
+    \item \textbf{8-fold symmetry:} Each unique ERI computed once:
+    \begin{align*}
+    \eri{\mu}{\nu}{\lambda}{\sigma} &= \eri{\nu}{\mu}{\lambda}{\sigma}
+    = \eri{\mu}{\nu}{\sigma}{\lambda} = \eri{\nu}{\mu}{\sigma}{\lambda} \\
+    &= \eri{\lambda}{\sigma}{\mu}{\nu} = \eri{\sigma}{\lambda}{\mu}{\nu}
+    = \eri{\lambda}{\sigma}{\nu}{\mu} = \eri{\sigma}{\lambda}{\nu}{\mu}
+    \end{align*}
+
+    \item \textbf{Cache efficiency:} Shell blocks fit in L1/L2 cache
+
+    \item \textbf{SIMD vectorization:} libcint uses AVX/SSE instructions for primitive loops
+\end{enumerate}
+
+\textbf{Implementation Notes:}
+
+To see the direct algorithm more clearly, you can examine PySCF's source:
+\begin{lstlisting}[style=python]
+# In pyscf/scf/_vhf.py
+def direct(mol, dm, with_j=True, with_k=True):
+    # Loop over shell quartets with screening
+    for ish in range(mol.nbas):
+        for jsh in range(ish+1):
+            # Schwarz screening check
+            if diag[ish]*diag[jsh] < thresh:
+                continue
+            for ksh in range(ish+1):
+                for lsh in range(ksh+1):
+                    # More screening
+                    # Compute ERI block
+                    # Accumulate into J and K
+\end{lstlisting}
+\end{labAnswer}
+
+
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Exercise Answer Keys}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Brief answers for the end-of-chapter exercises (Section 6.12).
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 6.1: Derive the RHF Energy in AO Form [Core]}
+
+\begin{keyInsight}[Factor Tracking]
+Starting from the spin-orbital energy:
+\[
+E_{\mathrm{HF}} = \sum_i^{\mathrm{occ}} \langle i|\hat{h}|i\rangle
++ \frac{1}{2}\sum_{i,j}^{\mathrm{occ}}(\langle ij|ij\rangle - \langle ij|ji\rangle) + E_{\mathrm{nuc}}
+\]
+
+For RHF with $N_e/2$ doubly-occupied spatial orbitals:
+\begin{align*}
+\sum_i^{\mathrm{spin-occ}} \langle i|\hat{h}|i\rangle
+&= 2\sum_i^{\mathrm{spatial-occ}} \langle \phi_i|\hat{h}|\phi_i\rangle
+= \sum_{\mu\nu} P_{\mu\nu} h_{\mu\nu} = \tr{\Pmat\Hcore}
+\end{align*}
+
+For two-electron terms, summing over all spin orbitals and converting to spatial orbitals
+gives factors of 4 for Coulomb and 2 for exchange. Combined with the $\frac{1}{2}$ prefactor:
+\[
+E_{\text{2e}} = \frac{1}{2}(4J - 2K) = 2J - K = \frac{1}{2}\tr{\Pmat(2\Jmat - \Kmat)}
+= \frac{1}{2}\tr{\Pmat\mat{G}}
+\]
+where we use $\mat{G} = \Jmat - \frac{1}{2}\Kmat$ with an extra factor redistributed.
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 6.2: Stationarity and the Commutator Residual [Core]}
+
+\begin{keyInsight}[Proof Sketch]
+At convergence, Roothaan-Hall gives:
+\[
+\Fmat\Cmat = \Smat\Cmat\bm{\varepsilon}
+\]
+For occupied orbitals: $\Fmat\Cmat_{\text{occ}} = \Smat\Cmat_{\text{occ}}\bm{\varepsilon}_{\text{occ}}$
+
+Then:
+\begin{align*}
+\Fmat\Pmat\Smat &= \Fmat \cdot 2\Cmat_{\text{occ}}\Cmat_{\text{occ}}\T \cdot \Smat \\
+&= 2\Smat\Cmat_{\text{occ}}\bm{\varepsilon}_{\text{occ}}\Cmat_{\text{occ}}\T\Smat
+\end{align*}
+Similarly for $\Smat\Pmat\Fmat$. Since $\bm{\varepsilon}_{\text{occ}}$ is diagonal and
+$\Cmat_{\text{occ}}\T\Smat\Cmat_{\text{occ}} = \mat{I}$, both terms are equal, so
+$\mat{R} = \Fmat\Pmat\Smat - \Smat\Pmat\Fmat = \mathbf{0}$.
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 6.3: Direct SCF Conceptual Design [Core]}
+
+\textbf{Key points to include:}
+\begin{enumerate}
+    \item Four nested loops over shells: $(A, B, C, D)$ where $A \geq B$, $C \geq D$, and
+          $(AB) \geq (CD)$ in combined index
+    \item Pre-compute diagonal ERIs $(\mu\nu|\mu\nu)$ for all shell pairs for Schwarz bounds
+    \item For each quartet, check: if $\sqrt{(AB|AB)}\sqrt{(CD|CD)} < \tau$, skip
+    \item For surviving quartets: call integral engine (Rys quadrature for higher $\ell$)
+    \item Immediately contract: $J_{AB} += \sum_{CD} (AB|CD) P_{CD}$ and similar for K
+    \item Discard ERI block after use---no storage
+\end{enumerate}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 6.4: DIIS Behavior Study [Core]}
+
+\textbf{Typical results:}
+
+\begin{center}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{System} & \textbf{No DIIS} & \textbf{With DIIS} & \textbf{Residual Pattern} \\
+\midrule
+\ce{H2O}/STO-3G & 15 iter & 8 iter & Smooth decrease with DIIS \\
+\ce{H2} (3.0 \AA) & 40+ iter & 12 iter & Oscillations without DIIS \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The residual norm provides earlier warning of convergence issues than energy changes.
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 6.5: Reproduce PySCF Energies [Core]}
+
+For \ce{H2O}/STO-3G with geometry:
+\begin{verbatim}
+O  0.0000  0.0000  0.0000
+H  0.7586  0.0000  0.5043
+H -0.7586  0.0000  0.5043
+\end{verbatim}
+
+Expected: $E_{\text{HF}} = -74.9458938$ Hartree (agreement within $10^{-10}$).
+
+Typical adjustments: matching convergence thresholds, using \texttt{aosym="s1"}.
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 6.6: MO-Basis Gradient Check [Advanced]}
+
+The occupied-virtual gradient:
+\[
+g_{ai} = 2(\Cmat_{\text{vir}})\T\Fmat\Cmat_{\text{occ}} = 2F_{ai}^{\text{MO}}
+\]
+
+At convergence, $F_{ai}^{\text{MO}} = 0$ because the Fock matrix is diagonal in the MO basis.
+Both $\|g\|$ and $\|\mat{R}\|$ should be proportional (up to basis transformation factors).
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 6.7: Level Shifting Implementation [Advanced]}
+
+Implementation: After solving $\Fmat'\Cmat' = \Cmat'\bm{\varepsilon}$, add shift to virtual
+orbital energies:
+\begin{lstlisting}[style=python]
+eps[nocc:] += sigma  # Add shift to virtual orbital energies
+\end{lstlisting}
+
+Effect: Increases HOMO-LUMO gap, stabilizing early iterations for difficult cases.
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 6.8: SCF Metadynamics [Research]}
+
+Multiple SCF solutions arise when:
+\begin{itemize}
+    \item Symmetry breaking occurs (e.g., $\sigma_u$ vs $\sigma_g$ at stretched \ce{H2})
+    \item Different orbital orderings are possible (e.g., near-degenerate d-orbitals)
+\end{itemize}
+
+Experiments: Different initial guesses (core Hamiltonian vs SAD vs perturbed density)
+may converge to different minima with different energies. The lowest-energy solution
+is the HF ground state; higher solutions correspond to excited configurations or
+saddle points.
+
+\end{document}

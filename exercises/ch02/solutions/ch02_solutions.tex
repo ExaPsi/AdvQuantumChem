@@ -1,0 +1,1271 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ch02_solutions.tex
+% Answer Key for Chapter 2: Gaussian Basis Sets and Orthonormalization
+%
+% Course: 2302638 Advanced Quantum Chemistry
+% Institution: Department of Chemistry, Faculty of Science, Chulalongkorn University
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{../../solutions_style}
+
+\title{\textbf{Chapter 2: Answer Key}\\
+\large Gaussian Basis Sets and Orthonormalization\\
+\normalsize 2302638 Advanced Quantum Chemistry}
+\author{Department of Chemistry, Chulalongkorn University}
+\date{}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Overview}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+This answer key covers:
+\begin{itemize}
+    \item \textbf{11 Checkpoint Questions} (2.1--2.11) embedded throughout Chapter 2, testing conceptual understanding
+    \item \textbf{3 Python Labs} (2A, 2B, 2C) with expected numerical results and validation criteria
+\end{itemize}
+
+\noindent\textbf{Validation standard:} All numerical results should match PySCF reference calculations to within the specified tolerances.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Checkpoint Question Answers}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+This section provides detailed answers to all 11 checkpoint questions from Chapter 2,
+organized by their location in the chapter.
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 2.1: Why This Chapter Matters}
+\label{sec:cp21}
+
+\begin{checkpointAnswer}[Section 2.1 -- Overlap Metric Motivation]
+\textbf{Question:} In an AO basis, $\Smat \neq \mat{I}$. This single fact explains:
+\begin{itemize}[nosep]
+    \item why the HF equations are a \emph{generalized} eigenproblem $\Fmat\Cmat = \Smat\Cmat\bm{\varepsilon}$,
+    \item why SCF can fail to converge with diffuse basis sets,
+    \item why the electron count is $\tr{\Pmat\Smat}$ rather than $\tr{\Pmat}$.
+\end{itemize}
+Master the overlap metric now, and these mysteries disappear.
+
+\textbf{Answer:}
+This is a motivational checkpoint rather than a direct question. However, students should understand:
+
+\textbf{Why $\Smat \neq \mat{I}$ creates a generalized eigenproblem:}
+The MO orthonormality condition in function space is $\langle\phi_p|\phi_q\rangle = \delta_{pq}$. When MOs are expanded as $\phi_p = \sum_\mu C_{\mu p}\chi_\mu$, this becomes:
+\[
+\langle\phi_p|\phi_q\rangle = \sum_{\mu\nu} C_{\mu p}^* \langle\chi_\mu|\chi_\nu\rangle C_{\nu q} = \Cmat\T\Smat\Cmat = \mat{I}
+\]
+If $\Smat = \mat{I}$ (orthonormal basis), this reduces to $\Cmat\T\Cmat = \mat{I}$, and the Fock eigenvalue problem becomes ordinary. Since $\Smat \neq \mat{I}$ for GTOs, we get the generalized form.
+
+\textbf{Why diffuse basis sets cause SCF convergence issues:}
+Diffuse functions on neighboring atoms have large overlaps ($S_{\mu\nu} \approx 1$), making eigenvalues of $\Smat$ very small. The orthogonalizer $\Xmat = \mat{U}\mathbf{s}^{-1/2}$ involves dividing by $\sqrt{s_i}$, which amplifies numerical noise when $s_i \to 0$. This creates an ill-conditioned Fock matrix transformation that can destabilize SCF.
+
+\textbf{Why electron count is $\tr{\Pmat\Smat}$:}
+The electron density is $\rho(\mathbf{r}) = \sum_{\mu\nu} P_{\mu\nu}\chi_\mu(\mathbf{r})\chi_\nu(\mathbf{r})$. Integrating:
+\[
+N_e = \int \rho(\mathbf{r})\,d\mathbf{r} = \sum_{\mu\nu} P_{\mu\nu}\int\chi_\mu\chi_\nu\,d\mathbf{r} = \sum_{\mu\nu} P_{\mu\nu}S_{\mu\nu} = \tr{\Pmat\Smat}
+\]
+The overlap matrix converts the density matrix (which counts orbital populations) into actual electron counts by accounting for the spatial overlap of basis functions.
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 2.2: Primitives vs Contractions}
+\label{sec:cp22}
+
+\begin{checkpointAnswer}[Section 2.2 -- Gaussian Basis Functions]
+\textbf{Question:} What is the difference between a primitive and a contracted Gaussian? Why do basis sets use
+contractions instead of just primitives? (Hint: consider both computational cost and the need
+to approximate STO-like behavior.)
+
+\textbf{Answer:}
+\textbf{Primitive Gaussian:}
+A single Gaussian function of the form:
+\[
+g_{lmn}(\alpha,\mathbf{r}-\mathbf{A}) = N_{lmn}(\alpha)(x-A_x)^l(y-A_y)^m(z-A_z)^n e^{-\alpha|\mathbf{r}-\mathbf{A}|^2}
+\]
+Each primitive has one exponent $\alpha$ and is centered at one point $\mathbf{A}$.
+
+\textbf{Contracted Gaussian:}
+A fixed linear combination of primitives sharing the same center and angular momentum:
+\[
+\chi_{lmn}(\mathbf{r}) = \sum_{p=1}^{n_c} d_p\, g_{lmn}(\alpha_p, \mathbf{r}-\mathbf{A})
+\]
+The contraction coefficients $\{d_p\}$ and exponents $\{\alpha_p\}$ are predetermined and fixed during the calculation.
+
+\textbf{Why use contractions?}
+
+\begin{enumerate}
+    \item \textbf{Better approximation to STOs:} Single Gaussians have the wrong cusp (zero derivative at nucleus for s-type) and decay too fast ($e^{-\alpha r^2}$ vs $e^{-\zeta r}$). Combining tight (large $\alpha$) and diffuse (small $\alpha$) primitives can mimic the correct STO shape.
+
+    \item \textbf{Reduced computational cost:} Integral cost scales with the number of \emph{basis functions} for building matrices ($\sim N^2$ to $N^4$), but primitive combinations can be precomputed. If we used $K$ primitives as $K$ separate basis functions, we would have $K^4$ ERIs to compute. Using contractions, the number of basis functions $N < K$ while still capturing the physics encoded in the primitives.
+
+    \item \textbf{Transferability:} Contraction schemes are optimized for atoms and transfer well to molecules. The contracted functions represent chemically meaningful orbitals (core, valence) rather than arbitrary mathematical expansions.
+\end{enumerate}
+
+\textbf{Numerical example:} STO-3G uses 3 primitives per contracted function. For water with 7 AOs (STO-3G), we have 7 basis functions but $7 \times 3 = 21$ primitives. The integral engine works at the primitive level, but the Fock matrix is only $7 \times 7$.
+
+\begin{warningbox}
+A common error is confusing the \emph{number of basis functions} with the \emph{number of primitives}. When counting basis set size (e.g., for scaling analysis), count contracted functions, not primitives. However, integral evaluation cost does depend on the number of primitives.
+\end{warningbox}
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 2.3: Cartesian vs Spherical d-Functions}
+\label{sec:cp23}
+
+\begin{checkpointAnswer}[Section 2.3 -- Angular Momentum Components]
+\textbf{Question:} Why do $d$-functions have 6 Cartesian components but only 5 spherical components?
+Where does the ``extra'' Cartesian degree of freedom go?
+(Hint: Consider what happens to $x^2 + y^2 + z^2$.)
+
+\textbf{Answer:}
+\textbf{Counting formulas:}
+\begin{itemize}
+    \item Cartesian: $N_{\text{cart}}(L) = \frac{(L+1)(L+2)}{2}$. For $L=2$: $N_{\text{cart}}(2) = \frac{3\times4}{2} = 6$
+    \item Spherical: $N_{\text{sph}}(L) = 2L+1$. For $L=2$: $N_{\text{sph}}(2) = 5$
+\end{itemize}
+
+\textbf{The 6 Cartesian $d$-functions are:}
+\[
+x^2,\quad y^2,\quad z^2,\quad xy,\quad xz,\quad yz
+\]
+
+\textbf{The 5 spherical $d$-functions are:}
+\[
+d_{z^2} \propto (3z^2 - r^2),\quad d_{xz} \propto xz,\quad d_{yz} \propto yz,\quad d_{xy} \propto xy,\quad d_{x^2-y^2} \propto (x^2-y^2)
+\]
+
+\textbf{Where does the extra component go?}
+
+The combination $x^2 + y^2 + z^2 = r^2$ is a \emph{purely radial} function with no angular dependence. It transforms as an \textbf{s-function} ($L=0$), not a $d$-function ($L=2$). This is the ``spurious'' component.
+
+Mathematically, the 6-dimensional space of Cartesian $d$-functions decomposes as:
+\[
+\text{6 Cartesian } d\text{-functions} = \underbrace{\text{5 true } d\text{-functions}}_{L=2} \oplus \underbrace{\text{1 } s\text{-function}}_{L=0}
+\]
+
+\textbf{General pattern:}
+For angular momentum $L$, Cartesian Gaussians contain spurious components with $L-2$, $L-4$, etc. The number of spurious functions is:
+\[
+N_{\text{cart}}(L) - N_{\text{sph}}(L) = \frac{L(L-1)}{2}
+\]
+
+\begin{center}
+\begin{tabular}{cccl}
+\toprule
+$L$ & Spurious & Formula & Character \\
+\midrule
+0 (s) & 0 & $0$ & --- \\
+1 (p) & 0 & $0$ & --- \\
+2 (d) & 1 & $\frac{2\times1}{2}=1$ & s-type ($r^2$) \\
+3 (f) & 3 & $\frac{3\times2}{2}=3$ & p-type ($xr^2, yr^2, zr^2$) \\
+4 (g) & 6 & $\frac{4\times3}{2}=6$ & d-type + s-type \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Why spherical functions are preferred:}
+Using Cartesian $d$-functions includes an extra s-type component that (1) increases basis set size unnecessarily and (2) can worsen linear dependence if an explicit s-function is also present.
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 2.4: Basis Set Tradeoffs}
+\label{sec:cp24}
+
+\begin{checkpointAnswer}[Section 2.4 -- Basis Set Selection]
+\textbf{Question:} Why not simply use the largest possible basis set with many polarization and diffuse functions?
+Beyond computational cost ($\mathcal{O}(N^4)$ for ERIs), what numerical issue limits basis set size?
+
+\textbf{Answer:}
+\textbf{The numerical issue: Near-linear dependence}
+
+Large basis sets with many diffuse functions create \textbf{near-linear dependence} in the overlap matrix $\Smat$. This manifests as:
+\begin{enumerate}
+    \item Very small eigenvalues of $\Smat$ (approaching machine precision)
+    \item Large condition number $\kappa(\Smat) = s_{\max}/s_{\min}$
+    \item Numerical instability in orthogonalization and SCF
+\end{enumerate}
+
+\textbf{Physical origin:}
+Diffuse functions on neighboring atoms have significant spatial overlap. When two basis functions $\chi_\mu$ and $\chi_\nu$ satisfy $S_{\mu\nu} \approx 1$, their linear combination $\chi_\mu - \chi_\nu$ has near-zero norm ($\|\chi_\mu - \chi_\nu\|^2 \approx 0$). This means the combination is nearly the zero function---the basis is ``almost linearly dependent.''
+
+\textbf{Numerical consequences:}
+\begin{itemize}
+    \item Orthogonalization requires computing $\mathbf{s}^{-1/2}$, which amplifies errors when eigenvalues are small
+    \item The generalized eigenproblem becomes ill-conditioned
+    \item SCF may fail to converge or converge to wrong solutions
+    \item Small changes in geometry can cause large changes in MO coefficients
+\end{itemize}
+
+\textbf{The remedy:}
+Eigenvalue thresholding removes near-dependent directions (typically $\tau = 10^{-6}$ to $10^{-8}$). This is a \emph{numerical} fix, not a physical approximation---we are removing basis combinations that contribute nothing beyond numerical noise.
+
+\textbf{Quantitative example (from text):}
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+Basis & $N_{\text{AO}}$ & $\min(s_i)$ \\
+\midrule
+STO-3G & 7 & $\sim 0.35$ \\
+cc-pVDZ & 24 & $\sim 0.05$ \\
+aug-cc-pVDZ & 41 & $\sim 0.003$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+Adding diffuse functions (aug-) decreases $\min(s_i)$ by an order of magnitude.
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 2.5: Near-Linear Dependence}
+\label{sec:cp25}
+
+\begin{checkpointAnswer}[Section 2.5 -- Near-Linear Dependence]
+\textbf{Question:} If two basis functions become nearly linearly dependent, what happens to one eigenvalue of
+$\Smat$? What happens to $\kappa(\Smat)$?
+
+\textbf{Answer:}
+\textbf{What happens to eigenvalues:}
+
+When two basis functions $\chi_\mu$ and $\chi_\nu$ become nearly identical (i.e., $S_{\mu\nu} \to 1$), one eigenvalue of $\Smat$ approaches zero.
+
+\textbf{Mathematical explanation:}
+Consider the simple $2 \times 2$ case where both functions are normalized ($S_{\mu\mu} = S_{\nu\nu} = 1$):
+\[
+\Smat = \begin{pmatrix} 1 & S_{\mu\nu} \\ S_{\mu\nu} & 1 \end{pmatrix}
+\]
+The eigenvalues are:
+\[
+s_{\pm} = 1 \pm S_{\mu\nu}
+\]
+As $S_{\mu\nu} \to 1$: $s_+ \to 2$ and $s_- \to 0$.
+
+The eigenvector for $s_- \to 0$ is proportional to $(1, -1)\T$, representing the combination $\chi_\mu - \chi_\nu$ which has vanishing norm.
+
+\textbf{What happens to $\kappa(\Smat)$:}
+
+The condition number $\kappa(\Smat) = s_{\max}/s_{\min}$ grows without bound as $s_{\min} \to 0$:
+\[
+\kappa(\Smat) = \frac{s_+}{s_-} = \frac{1 + S_{\mu\nu}}{1 - S_{\mu\nu}} \xrightarrow{S_{\mu\nu}\to 1} \infty
+\]
+
+\textbf{Physical interpretation:}
+\begin{itemize}
+    \item A large condition number means the overlap matrix is ``almost singular''
+    \item The direction corresponding to $s_- \approx 0$ represents a linear combination of basis functions that contributes essentially nothing to the function space
+    \item Trying to orthogonalize this direction amplifies numerical noise because we divide by $\sqrt{s_-}$
+\end{itemize}
+
+\textbf{General case:}
+In a large basis, near-linear dependence can involve multiple functions. The overlap matrix may have several small eigenvalues, each corresponding to a nearly redundant linear combination. The smallest eigenvalue determines the stability of the orthogonalization procedure.
+
+\begin{keyformulabox}
+For a $2\times 2$ overlap matrix with normalized functions:
+\[
+\Smat = \begin{pmatrix} 1 & S_{12} \\ S_{12} & 1 \end{pmatrix} \quad\Rightarrow\quad
+s_\pm = 1 \pm S_{12}, \quad \kappa = \frac{1+S_{12}}{1-S_{12}}
+\]
+\end{keyformulabox}
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 2.6: Gram--Schmidt Stability}
+\label{sec:cp26}
+
+\begin{checkpointAnswer}[Section 2.6 -- Gram--Schmidt Stability]
+\textbf{Question:} How does the numerical instability of Gram--Schmidt relate to the condition number $\kappa(\Smat)$?
+When $\kappa(\Smat)$ is large, what happens to the intermediate vectors in the orthogonalization
+process, and why does MGS help (but not fully solve) this problem?
+
+\textbf{Answer:}
+\textbf{Relationship between instability and $\kappa(\Smat)$:}
+
+The Gram--Schmidt process iteratively subtracts projections:
+\[
+\tilde{\phi}_k = \chi_k - \sum_{j=1}^{k-1}\phi_j\langle\phi_j|\chi_k\rangle
+\]
+then normalizes: $\phi_k = \tilde{\phi}_k / \|\tilde{\phi}_k\|$.
+
+When $\kappa(\Smat)$ is large, some intermediate vectors $\tilde{\phi}_k$ become nearly zero in norm. The normalization step divides by this small norm, amplifying any rounding errors.
+
+\textbf{What happens to intermediate vectors:}
+
+Near-linear dependence means some $\chi_k$ is nearly expressible as a linear combination of $\{\chi_1, \ldots, \chi_{k-1}\}$. After subtracting projections, the residual $\tilde{\phi}_k$ should be small. However, rounding errors in computing the projections mean $\tilde{\phi}_k$ is not exactly what it should be---it contains a component parallel to the already-orthonormalized vectors.
+
+When we normalize this ``small but wrong'' vector, the error is amplified by a factor $\sim 1/\|\tilde{\phi}_k\|$. If $\|\tilde{\phi}_k\| \sim 10^{-8}$, normalization amplifies errors by $\sim 10^8$.
+
+\textbf{Why MGS helps (but doesn't fully solve the problem):}
+
+Classical GS computes all projections using the \emph{original} $\chi_k$:
+\[
+\tilde{\phi}_k = \chi_k - \sum_{j=1}^{k-1}\phi_j\langle\phi_j|\chi_k\rangle \quad\text{(CGS)}
+\]
+
+Modified GS updates incrementally:
+\[
+\mathbf{v}^{(0)} = \chi_k, \quad \mathbf{v}^{(j)} = \mathbf{v}^{(j-1)} - \phi_j\langle\phi_j|\mathbf{v}^{(j-1)}\rangle \quad\text{(MGS)}
+\]
+
+In MGS, each projection is computed against a vector that is already closer to orthogonal with respect to $\phi_1, \ldots, \phi_{j-1}$. This reduces error accumulation because the intermediate vector $\mathbf{v}^{(j-1)}$ has had its components along earlier vectors removed.
+
+\textbf{Why MGS doesn't fully solve the problem:}
+
+Even with MGS, the fundamental issue remains: when $\|\tilde{\phi}_k\|$ is very small (comparable to machine precision), no amount of careful projection can rescue the situation. The signal is lost in the noise. MGS improves \emph{relative} error but cannot overcome \emph{absolute} precision limits.
+
+\textbf{The robust solution:}
+
+Eigendecomposition-based orthogonalization (Algorithm 2.2) handles this by explicitly identifying small eigenvalues and dropping them. This is mathematically equivalent to recognizing that the corresponding directions contribute nothing meaningful and removing them from the basis.
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 2.7: Eigenvalue Thresholding}
+\label{sec:cp27}
+
+\begin{checkpointAnswer}[Section 2.7 -- Eigenvalue Thresholding]
+\textbf{Question:} If you drop eigenvalues below $\tau$, what changes physically? Are you changing the molecule,
+or are you changing the numerical representation of the same molecule?
+
+\textbf{Answer:}
+\textbf{You are changing the numerical representation, not the molecule.}
+
+\textbf{Mathematical perspective:}
+
+The eigendecomposition $\Smat = \mat{U}\mathbf{s}\mat{U}\T$ reveals the principal directions of the overlap structure. The eigenvector $\mathbf{u}_i$ with eigenvalue $s_i \approx 0$ corresponds to a linear combination of AOs:
+\[
+\tilde{\chi}_i = \sum_\mu U_{\mu i}\chi_\mu
+\]
+that has $\langle\tilde{\chi}_i|\tilde{\chi}_i\rangle = s_i \approx 0$. This combination is nearly the zero function---it contributes essentially nothing to the span of the basis.
+
+\textbf{Physical perspective:}
+
+Dropping this eigenvalue means excluding a direction that:
+\begin{enumerate}
+    \item Has negligible overlap with any physical observable
+    \item Cannot meaningfully distinguish any electronic configurations
+    \item Contributes only numerical noise to the calculation
+\end{enumerate}
+
+The \emph{molecule} (nuclei positions, electron count) is unchanged. The \emph{Hilbert space} we are approximating is unchanged. We are merely removing a redundant, numerically problematic parameterization of that space.
+
+\textbf{Analogy:}
+Consider describing 3D vectors using 4 coordinates where the 4th is always $0.999\times$ (sum of first 3). The 4th coordinate adds no information but creates numerical problems. Dropping it doesn't change what vectors we can represent.
+
+\textbf{Caveat---when thresholding can matter:}
+
+For certain properties (e.g., polarizabilities, anion binding), the diffuse tails of wavefunctions are physically important. Aggressive thresholding might remove basis directions needed to describe:
+\begin{itemize}
+    \item Weakly bound electrons in anions
+    \item Long-range response to electric fields
+    \item Rydberg state character
+\end{itemize}
+
+In these cases, the ``near-zero'' eigenvalue direction may be chemically relevant, and thresholding is a physical approximation, not just numerical cleanup. This is rare but should be considered when very diffuse functions are essential to the physics.
+
+\textbf{Practical guideline:}
+Use conservative thresholds ($\tau = 10^{-6}$ to $10^{-8}$) to avoid removing physically relevant directions while still maintaining numerical stability.
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 2.8: Linear Dependence vs BSSE}
+\label{sec:cp28}
+
+\begin{checkpointAnswer}[Section 2.7 -- Linear Dependence vs BSSE]
+\textbf{Question:} Students sometimes confuse \emph{near-linear dependence} (discussed here) with
+\emph{Basis Set Superposition Error} (BSSE). These are distinct phenomena. \\
+\textbf{The paradox:} Larger basis sets \emph{reduce} BSSE (approaching the complete
+basis set limit) but \emph{increase} linear dependence. Both involve diffuse functions,
+but for entirely different reasons.
+
+\textbf{Answer:}
+\textbf{Near-Linear Dependence (Numerical Problem):}
+\begin{itemize}
+    \item \textbf{Cause:} Diffuse functions on neighboring atoms have large overlap ($S_{\mu\nu} \approx 1$)
+    \item \textbf{Symptom:} Small eigenvalues of $\Smat$, ill-conditioned generalized eigenproblem
+    \item \textbf{Effect:} Numerical instability in SCF, potentially wrong convergence
+    \item \textbf{Cure:} Eigenvalue thresholding (Algorithm 2.2)
+    \item \textbf{Nature:} Numerical artifact, not a physical approximation
+\end{itemize}
+
+\textbf{Basis Set Superposition Error (Physical Artifact):}
+\begin{itemize}
+    \item \textbf{Cause:} In supermolecular calculations (A + B), each fragment ``borrows'' basis functions from the other to improve its own description
+    \item \textbf{Symptom:} Interaction energies are artificially too attractive (over-binding)
+    \item \textbf{Effect:} Systematic error in binding energies, barriers, etc.
+    \item \textbf{Cure:} Counterpoise correction (calculating each fragment in the full dimer basis)
+    \item \textbf{Nature:} Physical artifact of finite basis incompleteness
+\end{itemize}
+
+\textbf{Why the paradox occurs:}
+
+\textbf{Large basis $\to$ Less BSSE:}
+With a complete basis, each monomer is already perfectly described---there's nothing to ``borrow.'' BSSE decreases monotonically toward zero as basis set quality improves.
+
+\textbf{Large basis $\to$ More linear dependence:}
+Adding functions (especially diffuse ones) increases the chance that some linear combination is nearly redundant. The overlap matrix grows, and more eigenvalues can become small.
+
+\textbf{The shared culprit---diffuse functions:}
+Both phenomena involve diffuse functions, but for opposite reasons:
+\begin{itemize}
+    \item BSSE involves diffuse functions because they extend far enough to be ``borrowed'' by the partner fragment
+    \item Linear dependence involves diffuse functions because they extend far enough to overlap strongly with functions on neighboring centers
+\end{itemize}
+
+\textbf{Summary table:}
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+ & Linear Dependence & BSSE \\
+\midrule
+Nature & Numerical & Physical \\
+Cause & $S_{\mu\nu} \approx 1$ & Incomplete monomer basis \\
+Symptom & $s_{\min} \to 0$ & $E_{\text{int}}$ too negative \\
+Cure & Thresholding & Counterpoise \\
+Larger basis & Worse & Better \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 2.9: Cholesky vs Eigendecomposition}
+\label{sec:cp29}
+
+\begin{checkpointAnswer}[Section 2.8 -- Cholesky vs Eigendecomposition]
+\textbf{Question:} Why does Cholesky factorization fail when $\Smat$ has very small eigenvalues, whereas
+eigenvalue thresholding (Algorithm~2.2) handles this case gracefully? When would you
+prefer Cholesky over eigendecomposition-based methods?
+
+\textbf{Answer:}
+\textbf{Why Cholesky fails with small eigenvalues:}
+
+Cholesky factorization computes $\Smat = \mat{L}\mat{L}\T$ where $\mat{L}$ is lower triangular. The algorithm proceeds column by column:
+\[
+L_{jj} = \sqrt{S_{jj} - \sum_{k=1}^{j-1}L_{jk}^2}
+\]
+
+When $\Smat$ has a very small eigenvalue, at some step the quantity under the square root becomes very small or negative (due to rounding). The algorithm either:
+\begin{enumerate}
+    \item Produces a very small $L_{jj}$, leading to large entries in $\mat{L}^{-1}$ and numerical instability
+    \item Encounters a negative argument, causing failure
+\end{enumerate}
+
+There is no natural way in standard Cholesky to ``skip'' a problematic direction---the algorithm processes the matrix in index order, not eigenvalue order.
+
+\textbf{Why eigenvalue thresholding works:}
+
+Eigendecomposition explicitly computes $\Smat = \mat{U}\mathbf{s}\mat{U}\T$, revealing which directions are problematic (small $s_i$). We can:
+\begin{enumerate}
+    \item Identify eigenvalues below threshold $\tau$
+    \item Exclude those directions from $\mat{U}$
+    \item Form $\Xmat = \mat{U}_k\mathbf{s}_k^{-1/2}$ using only ``healthy'' eigenvalues
+\end{enumerate}
+
+The result is a rectangular $N \times M$ matrix that spans the numerically stable subspace. The problematic directions are simply absent.
+
+\textbf{When to prefer Cholesky:}
+
+Cholesky is faster: $\mathcal{O}(N^3/3)$ vs $\mathcal{O}(N^3)$ for eigendecomposition (with a larger prefactor for eigen). Use Cholesky when:
+\begin{enumerate}
+    \item $\Smat$ is well-conditioned (minimal/small basis, no diffuse functions)
+    \item Speed is critical (large-scale calculations where orthogonalization is a bottleneck)
+    \item The code can fall back to eigendecomposition if Cholesky fails
+\end{enumerate}
+
+\textbf{Practical strategy in production codes:}
+\begin{enumerate}
+    \item Attempt Cholesky first (fast)
+    \item If Cholesky fails or produces poor condition number, fall back to eigendecomposition with thresholding
+    \item For known problematic cases (aug-cc-pVTZ on anions), go directly to eigendecomposition
+\end{enumerate}
+
+\textbf{Additional note---pivoted Cholesky:}
+
+A pivoted Cholesky factorization reorders columns to process large diagonals first, deferring small/problematic pivots to the end. This allows truncation similar to eigenvalue thresholding but at Cholesky's lower cost. Some production codes use this approach.
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 2.10: Role of the Overlap Matrix}
+\label{sec:cp210}
+
+\begin{checkpointAnswer}[Section 2.9 -- Role of the Overlap Matrix]
+\textbf{Question:} In Algorithm 2.3, why do we orthogonalize $\Smat$ and not $\Fmat$?
+What role does $\Smat$ play in defining orthonormal MOs?
+
+\textbf{Answer:}
+\textbf{Why we orthogonalize $\Smat$, not $\Fmat$:}
+
+The overlap matrix $\Smat$ defines the \textbf{metric} of our function space---it determines what ``orthogonal'' and ``normalized'' mean for functions expanded in the AO basis. This metric is:
+\begin{itemize}
+    \item Fixed by the basis set choice
+    \item Independent of the Hamiltonian or electronic state
+    \item The same for any operator matrix ($\Fmat$, $\Hcore$, etc.)
+\end{itemize}
+
+The Fock matrix $\Fmat$ is just one operator expressed in this basis. Different operators ($\Hcore$, $\Fmat$ at different SCF iterations, property integrals) all share the same metric $\Smat$.
+
+\textbf{Mathematical role of $\Smat$:}
+
+The orthonormality condition for MOs in function space is:
+\[
+\langle\phi_p|\phi_q\rangle = \delta_{pq}
+\]
+Expanding MOs in the AO basis: $\phi_p = \sum_\mu C_{\mu p}\chi_\mu$, this becomes:
+\[
+\sum_{\mu\nu}C_{\mu p}^*\langle\chi_\mu|\chi_\nu\rangle C_{\nu q} = \Cmat\T\Smat\Cmat = \mat{I}
+\]
+
+The key insight: $\Smat$ appears because basis functions are not orthonormal. We construct $\Xmat$ satisfying $\Xmat\T\Smat\Xmat = \mat{I}$ so that coefficients in the transformed basis automatically satisfy the orthonormality constraint.
+
+\textbf{What if we ``orthogonalized'' $\Fmat$ instead?}
+
+If we tried $\Fmat = \mat{U}_F\bm{\varepsilon}\mat{U}_F\T$ (ordinary diagonalization), the eigenvectors $\mat{U}_F$ would satisfy $\mat{U}_F\T\mat{U}_F = \mat{I}$, but \textbf{not} $\mat{U}_F\T\Smat\mat{U}_F = \mat{I}$.
+
+The resulting MOs would:
+\begin{enumerate}
+    \item Not be orthonormal in the function space sense
+    \item Give wrong electron counts ($\tr{\Pmat\Smat} \neq N_e$)
+    \item Lead to incorrect energies and properties
+\end{enumerate}
+
+\textbf{The separation of concerns:}
+\begin{itemize}
+    \item $\Smat$ defines the geometry of the basis (metric, orthogonality)
+    \item $\Fmat$ defines the physics (orbital energies, which MOs are occupied)
+    \item Algorithm 2.3 first handles the geometry ($\Xmat$ from $\Smat$), then the physics ($\Fmat' = \Xmat\T\Fmat\Xmat$)
+\end{itemize}
+
+This separation is efficient: compute $\Xmat$ once from $\Smat$, reuse it for every $\Fmat$ (at each SCF iteration, for different properties, etc.).
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 2.11: Near-Linear Dependence in Practice}
+\label{sec:cp211}
+
+\begin{checkpointAnswer}[Section 2.10 -- Near-Linear Dependence in Practice]
+\textbf{Question:} In practice, why might a code prefer dropping near-dependent directions rather than trying to keep
+all basis functions at all costs?
+
+\textbf{Answer:}
+\textbf{Reasons to drop near-dependent directions:}
+
+\begin{enumerate}
+    \item \textbf{Numerical stability is paramount:}
+    A calculation that converges to a wrong answer (or doesn't converge at all) is useless, regardless of how ``complete'' the basis is. Dropping problematic directions ensures reliable results.
+
+    \item \textbf{Near-zero eigenvalue directions contribute nothing:}
+    A direction with $s_i \sim 10^{-10}$ represents a linear combination of AOs that has essentially zero norm. This combination cannot distinguish any physical states---it's noise, not signal.
+
+    \item \textbf{Cost without benefit:}
+    Keeping an extra basis direction adds $\mathcal{O}(N^3)$ to diagonalization cost and $\mathcal{O}(N^4)$ to ERI contractions. If that direction contributes only $10^{-10}$ to any observable, the cost far exceeds any possible benefit.
+
+    \item \textbf{Condition number affects all downstream calculations:}
+    A large $\kappa(\Smat)$ doesn't just affect orthogonalization---it propagates to the Fock matrix eigenvalue problem, DIIS convergence, response property calculations, etc. One problematic direction can destabilize an entire workflow.
+
+    \item \textbf{The ``lost'' information is usually irrelevant:}
+    For typical chemistry (ground-state energies, structures, common properties), the diffuse regions described by near-dependent functions are beyond the precision that matters. Dropping them changes results by $\sim 10^{-8}$ Hartree or less.
+\end{enumerate}
+
+\textbf{When to be cautious:}
+
+There are cases where aggressive thresholding could affect results:
+\begin{itemize}
+    \item Anion calculations (weakly bound electrons in diffuse orbitals)
+    \item Polarizabilities and other response properties
+    \item Excited states with Rydberg character
+    \item Weak intermolecular interactions at long range
+\end{itemize}
+
+In these cases, use a more conservative threshold ($\tau = 10^{-10}$ instead of $10^{-6}$) and verify that results are converged with respect to $\tau$.
+
+\textbf{The practical philosophy:}
+
+Electronic structure theory is always an approximation (finite basis, finite correlation treatment, etc.). Adding one more source of approximation (dropping near-dependent directions) is acceptable if:
+\begin{enumerate}
+    \item The error is smaller than other approximations in the calculation
+    \item The gain in stability/reliability is significant
+    \item The user can verify convergence by varying the threshold
+\end{enumerate}
+\end{checkpointAnswer}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Lab Solutions}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%-------------------------------------------------------------------------------
+\subsection{Lab 2A: Eigenvalues of S and Conditioning vs Basis Set}
+%-------------------------------------------------------------------------------
+
+\begin{solutionbox}[Lab 2A Objectives]
+\begin{itemize}
+    \item Compute overlap eigenvalue spectra for different basis sets
+    \item Observe how diffuse functions affect conditioning
+    \item Calculate effective condition numbers
+\end{itemize}
+\end{solutionbox}
+
+\textbf{Expected numerical results:}
+
+For H$_2$O with geometry \texttt{O 0 0 0; H 0.7586 0 0.5043; H -0.7586 0 0.5043} (Angstrom):
+
+\begin{center}
+\begin{tabular}{lccccc}
+\toprule
+Basis & $N_{\text{AO}}$ & $s_{\min}$ & $s_{\max}$ & $\kappa(\Smat)$ \\
+\midrule
+STO-3G & 7 & $3.54 \times 10^{-1}$ & $2.00$ & $5.7$ \\
+cc-pVDZ & 24 & $2.47 \times 10^{-2}$ & $2.71$ & $1.1 \times 10^{2}$ \\
+aug-cc-pVDZ & 41 & $2.67 \times 10^{-3}$ & $3.20$ & $1.2 \times 10^{3}$ \\
+aug-cc-pVTZ & 92 & $7.12 \times 10^{-4}$ & $4.04$ & $5.7 \times 10^{3}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Key observations:}
+
+\begin{enumerate}
+    \item \textbf{Basis size increases:} More functions provide more flexibility but also more potential for redundancy.
+
+    \item \textbf{Minimum eigenvalue decreases:} Adding diffuse functions (aug-) dramatically decreases $s_{\min}$. The aug-cc-pVDZ minimum is $\sim$100x smaller than cc-pVDZ.
+
+    \item \textbf{Condition number grows:} $\kappa(\Smat)$ increases roughly by an order of magnitude with each step up in basis quality.
+
+    \item \textbf{Maximum eigenvalue is stable:} $s_{\max}$ grows slowly (from 2 to 4) because it reflects the most localized, tightly bound core functions which don't change much.
+\end{enumerate}
+
+\textbf{Complete solution code:}
+
+\begin{lstlisting}
+import numpy as np
+from pyscf import gto
+
+def overlap_spectrum(atom, basis, unit="Angstrom"):
+    """Compute overlap eigenvalues and condition number."""
+    mol = gto.M(atom=atom, basis=basis, unit=unit, verbose=0)
+    S = mol.intor("int1e_ovlp")
+    eigs = np.linalg.eigvalsh(S)
+    eigs_sorted = np.sort(eigs)[::-1]  # descending
+
+    # Effective condition number (ignore numerically zero eigenvalues)
+    tiny = 1e-14
+    eigs_keep = eigs_sorted[eigs_sorted > tiny]
+    cond = eigs_keep[0] / eigs_keep[-1]
+
+    return mol.nao_nr(), eigs_sorted, cond
+
+# Water geometry
+atom = "O 0 0 0; H 0.7586 0 0.5043; H -0.7586 0 0.5043"
+
+print("Basis Set Conditioning Analysis for H2O")
+print("=" * 60)
+print(f"{'Basis':<15} {'N_AO':>5} {'min(s)':>12} {'max(s)':>8} {'kappa':>12}")
+print("-" * 60)
+
+for basis in ["sto-3g", "cc-pVDZ", "aug-cc-pVDZ", "aug-cc-pVTZ"]:
+    nao, eigs, cond = overlap_spectrum(atom, basis)
+    print(f"{basis:<15} {nao:>5d} {eigs.min():>12.3e} {eigs.max():>8.2f} {cond:>12.1e}")
+
+print("\nSmallest 5 eigenvalues for aug-cc-pVDZ:")
+_, eigs, _ = overlap_spectrum(atom, "aug-cc-pVDZ")
+for i, e in enumerate(np.sort(eigs)[:5]):
+    print(f"  s_{i+1} = {e:.6e}")
+\end{lstlisting}
+
+\textbf{Sample output:}
+\begin{verbatim}
+Basis Set Conditioning Analysis for H2O
+============================================================
+Basis             N_AO       min(s)   max(s)        kappa
+------------------------------------------------------------
+sto-3g                7    3.542e-01     2.00      5.7e+00
+cc-pVDZ              24    2.473e-02     2.71      1.1e+02
+aug-cc-pVDZ          41    2.672e-03     3.20      1.2e+03
+aug-cc-pVTZ          92    7.124e-04     4.04      5.7e+03
+
+Smallest 5 eigenvalues for aug-cc-pVDZ:
+  s_1 = 2.672349e-03
+  s_2 = 7.441825e-03
+  s_3 = 1.086731e-02
+  s_4 = 1.524639e-02
+  s_5 = 3.217584e-02
+\end{verbatim}
+
+\begin{warningbox}
+Students often confuse $\kappa(\Smat)$ with $\kappa(\Fmat)$. The overlap matrix condition number is \emph{independent} of the electronic state---it depends only on the basis set and geometry. The Fock matrix condition number varies during SCF.
+\end{warningbox}
+
+%-------------------------------------------------------------------------------
+\subsection{Lab 2B: Build X such that X\textasciicircum T S X = I}
+%-------------------------------------------------------------------------------
+
+\begin{solutionbox}[Lab 2B Objectives]
+\begin{itemize}
+    \item Implement the canonical orthogonalizer with eigenvalue thresholding
+    \item Implement Cholesky and Gram--Schmidt orthogonalizers for comparison
+    \item Verify orthogonality of the resulting transformation matrices
+\end{itemize}
+\end{solutionbox}
+
+\textbf{Expected numerical results:}
+
+For H$_2$O with aug-cc-pVDZ basis:
+
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+Method & Kept dims ($M$) & $\|\Xmat\T\Smat\Xmat - \mat{I}\|_F$ & Notes \\
+\midrule
+Canonical ($\tau=10^{-10}$) & 41 & $< 10^{-14}$ & Stable \\
+Canonical ($\tau=10^{-6}$) & 41 & $< 10^{-14}$ & Stable \\
+Symmetric ($\tau=10^{-10}$) & 41 & $< 10^{-14}$ & Stable \\
+Cholesky & 41 & $< 10^{-14}$ & Stable \\
+Gram--Schmidt & 41 & $\sim 10^{-10}$ & Less accurate \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Complete solution code:}
+
+\begin{lstlisting}
+import numpy as np
+from pyscf import gto
+
+def canonical_orthogonalizer(S, thresh=1e-10):
+    """Canonical orthogonalizer: X = U @ diag(s^{-1/2})"""
+    eigs, U = np.linalg.eigh(S)
+    keep = eigs > thresh
+    n_dropped = np.sum(~keep)
+    Uk = U[:, keep]
+    ek = eigs[keep]
+    X = Uk @ np.diag(ek ** -0.5)
+    return X, ek, n_dropped
+
+def symmetric_orthogonalizer(S, thresh=1e-10):
+    """Symmetric (Lowdin) orthogonalizer: X = S^{-1/2} = U @ diag(s^{-1/2}) @ U^T"""
+    eigs, U = np.linalg.eigh(S)
+    keep = eigs > thresh
+    n_dropped = np.sum(~keep)
+    Uk = U[:, keep]
+    ek = eigs[keep]
+    X = Uk @ np.diag(ek ** -0.5) @ Uk.T
+    return X, ek, n_dropped
+
+def cholesky_orthogonalizer(S):
+    """Cholesky orthogonalizer: X = L^{-T}"""
+    L = np.linalg.cholesky(S)
+    X = np.linalg.inv(L.T)
+    return X
+
+def gram_schmidt_orthogonalizer(S, thresh=1e-12):
+    """Modified Gram-Schmidt orthogonalizer under S-metric."""
+    N = S.shape[0]
+    X = np.zeros((N, N))
+    m = 0
+    for k in range(N):
+        v = np.zeros(N)
+        v[k] = 1.0
+        # Modified Gram-Schmidt under S
+        for j in range(m):
+            r = X[:, j].T @ S @ v
+            v = v - r * X[:, j]
+        n2 = v.T @ S @ v
+        if n2 < thresh:
+            continue  # Skip near-dependent direction
+        X[:, m] = v / np.sqrt(n2)
+        m += 1
+    return X[:, :m], m
+
+def check_orthogonality(S, X):
+    """Compute ||X^T S X - I||_F"""
+    I_approx = X.T @ S @ X
+    return np.linalg.norm(I_approx - np.eye(I_approx.shape[0]))
+
+# Setup molecule
+mol = gto.M(
+    atom="O 0 0 0; H 0.7586 0 0.5043; H -0.7586 0 0.5043",
+    basis="aug-cc-pVDZ",
+    unit="Angstrom",
+    verbose=0
+)
+S = mol.intor("int1e_ovlp")
+N = S.shape[0]
+
+print(f"Testing orthogonalizers for H2O/aug-cc-pVDZ (N={N})")
+print("=" * 70)
+
+# Canonical with different thresholds
+for tau in [1e-6, 1e-8, 1e-10, 1e-12]:
+    X, eigs, n_drop = canonical_orthogonalizer(S, thresh=tau)
+    err = check_orthogonality(S, X)
+    print(f"Canonical (tau={tau:.0e}): M={X.shape[1]:3d}, dropped={n_drop}, err={err:.2e}")
+
+# Symmetric
+X_sym, eigs, n_drop = symmetric_orthogonalizer(S, thresh=1e-10)
+err_sym = check_orthogonality(S, X_sym)
+print(f"Symmetric (tau=1e-10):   M={X_sym.shape[1]:3d}, dropped={n_drop}, err={err_sym:.2e}")
+
+# Cholesky
+try:
+    X_chol = cholesky_orthogonalizer(S)
+    err_chol = check_orthogonality(S, X_chol)
+    print(f"Cholesky:                M={X_chol.shape[1]:3d}, err={err_chol:.2e}")
+except np.linalg.LinAlgError:
+    print("Cholesky: FAILED (matrix not positive definite)")
+
+# Gram-Schmidt
+X_gs, m_gs = gram_schmidt_orthogonalizer(S, thresh=1e-12)
+err_gs = check_orthogonality(S, X_gs)
+print(f"Gram-Schmidt:            M={m_gs:3d}, err={err_gs:.2e}")
+
+# Compare canonical vs symmetric matrices
+X_can, _, _ = canonical_orthogonalizer(S, thresh=1e-10)
+diff = np.linalg.norm(X_can - X_sym[:, :X_can.shape[1]])
+print(f"\n||X_can - X_sym||_F = {diff:.2e} (should be nonzero)")
+print("(Different orthogonalizers, same orthogonality property)")
+\end{lstlisting}
+
+\textbf{Sample output:}
+\begin{verbatim}
+Testing orthogonalizers for H2O/aug-cc-pVDZ (N=41)
+======================================================================
+Canonical (tau=1e-06): M= 41, dropped=0, err=1.71e-15
+Canonical (tau=1e-08): M= 41, dropped=0, err=1.71e-15
+Canonical (tau=1e-10): M= 41, dropped=0, err=1.71e-15
+Canonical (tau=1e-12): M= 41, dropped=0, err=1.71e-15
+Symmetric (tau=1e-10):   M= 41, dropped=0, err=4.05e-15
+Cholesky:                M= 41, err=2.84e-15
+Gram-Schmidt:            M= 41, err=8.21e-11
+
+||X_can - X_sym||_F = 6.14e+01 (should be nonzero)
+(Different orthogonalizers, same orthogonality property)
+\end{verbatim}
+
+\textbf{Key observations:}
+
+\begin{enumerate}
+    \item All methods achieve $\Xmat\T\Smat\Xmat \approx \mat{I}$ to high precision for well-conditioned cases.
+
+    \item Gram--Schmidt shows slightly larger error ($10^{-10}$ vs $10^{-15}$) due to accumulated rounding.
+
+    \item Canonical and symmetric orthogonalizers are different matrices ($\|\Xmat_{\text{can}} - \Xmat_{\text{sym}}\| \gg 0$) but both valid.
+
+    \item For aug-cc-pVDZ on water, no eigenvalues are dropped even at $\tau = 10^{-6}$ because the smallest eigenvalue ($\sim 0.003$) is well above threshold.
+\end{enumerate}
+
+%-------------------------------------------------------------------------------
+\subsection{Lab 2C: Solve FC = SCe via Orthogonalization}
+%-------------------------------------------------------------------------------
+
+\begin{solutionbox}[Lab 2C Objectives]
+\begin{itemize}
+    \item Build the core Hamiltonian from one-electron integrals
+    \item Transform to an orthonormal basis and solve the ordinary eigenproblem
+    \item Verify that the resulting MO coefficients satisfy $\Cmat\T\Smat\Cmat = \mat{I}$
+\end{itemize}
+\end{solutionbox}
+
+\textbf{Expected numerical results:}
+
+For H$_2$ at $R = 0.74$ \AA{} with cc-pVDZ basis:
+
+\begin{center}
+\begin{tabular}{lc}
+\toprule
+Quantity & Expected Value \\
+\midrule
+Number of AOs & 10 \\
+Number of kept MOs (after thresholding) & 10 \\
+$\|\Cmat\T\Smat\Cmat - \mat{I}\|_F$ & $< 10^{-14}$ \\
+Lowest 5 eigenvalues & See below \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Lowest 5 core Hamiltonian eigenvalues (H$_2$/cc-pVDZ):}
+\begin{verbatim}
+eps[0] = -1.1287  (sigma bonding)
+eps[1] = -0.4927  (sigma antibonding)
+eps[2] =  0.1489
+eps[3] =  0.2117
+eps[4] =  0.5404
+\end{verbatim}
+
+\textbf{Complete solution code:}
+
+\begin{lstlisting}
+import numpy as np
+from pyscf import gto
+from scipy.linalg import eigh as scipy_eigh
+
+def canonical_orthogonalizer(S, thresh=1e-10):
+    """Canonical orthogonalizer with eigenvalue thresholding."""
+    eigs, U = np.linalg.eigh(S)
+    keep = eigs > thresh
+    Uk = U[:, keep]
+    ek = eigs[keep]
+    X = Uk @ np.diag(ek ** -0.5)
+    return X, ek
+
+def solve_gen_eig_orthog(F, S, thresh=1e-10):
+    """
+    Solve FC = SC*eps via orthogonalization (Algorithm 2.3).
+
+    Returns:
+        eps: eigenvalues (orbital energies)
+        C: eigenvectors (MO coefficients in AO basis)
+        X: orthogonalizer used
+    """
+    # Step 1: Build orthogonalizer
+    X, _ = canonical_orthogonalizer(S, thresh=thresh)
+
+    # Step 2: Transform F to orthonormal basis
+    F_prime = X.T @ F @ X
+
+    # Step 3: Solve ordinary eigenproblem
+    eps, C_prime = np.linalg.eigh(F_prime)
+
+    # Step 4: Back-transform to AO basis
+    C = X @ C_prime
+
+    return eps, C, X
+
+# Setup molecule
+mol = gto.M(
+    atom="H 0 0 0; H 0 0 0.74",
+    basis="cc-pVDZ",
+    unit="Angstrom",
+    verbose=0
+)
+
+# Build integrals
+S = mol.intor("int1e_ovlp")
+T = mol.intor("int1e_kin")
+V = mol.intor("int1e_nuc")
+H = T + V  # Core Hamiltonian
+
+print(f"H2/cc-pVDZ: N_AO = {mol.nao_nr()}")
+print("=" * 50)
+
+# Solve using our implementation
+eps, C, X = solve_gen_eig_orthog(H, S, thresh=1e-10)
+
+# Verify orthonormality
+I_check = C.T @ S @ C
+orth_err = np.linalg.norm(I_check - np.eye(C.shape[1]))
+print(f"||C^T S C - I||_F = {orth_err:.2e}")
+
+# Verify eigenvalue equation: H C[:, i] = S C[:, i] * eps[i]
+residual = H @ C - S @ C @ np.diag(eps)
+res_norm = np.linalg.norm(residual)
+print(f"||H C - S C eps||_F = {res_norm:.2e}")
+
+print(f"\nLowest 5 eigenvalues:")
+for i in range(min(5, len(eps))):
+    print(f"  eps[{i}] = {eps[i]:+.6f}")
+
+# Compare with scipy's generalized eigenvalue solver
+print("\n--- Validation against scipy.linalg.eigh ---")
+eps_scipy, C_scipy = scipy_eigh(H, S)
+eps_diff = np.max(np.abs(eps - eps_scipy))
+print(f"Max |eps_ours - eps_scipy| = {eps_diff:.2e}")
+
+# Also verify scipy's C satisfies orthonormality
+orth_err_scipy = np.linalg.norm(C_scipy.T @ S @ C_scipy - np.eye(C_scipy.shape[1]))
+print(f"||C_scipy^T S C_scipy - I||_F = {orth_err_scipy:.2e}")
+\end{lstlisting}
+
+\textbf{Sample output:}
+\begin{verbatim}
+H2/cc-pVDZ: N_AO = 10
+==================================================
+||C^T S C - I||_F = 1.33e-15
+||H C - S C eps||_F = 1.22e-14
+
+Lowest 5 eigenvalues:
+  eps[0] = -1.128704
+  eps[1] = -0.492678
+  eps[2] = +0.148875
+  eps[3] = +0.211698
+  eps[4] = +0.540418
+
+--- Validation against scipy.linalg.eigh ---
+Max |eps_ours - eps_scipy| = 2.22e-15
+||C_scipy^T S C_scipy - I||_F = 8.88e-16
+\end{verbatim}
+
+\textbf{Validation criteria:}
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+Check & Tolerance & Purpose \\
+\midrule
+$\|\Cmat\T\Smat\Cmat - \mat{I}\|_F$ & $< 10^{-12}$ & MO orthonormality \\
+$\|\Hcore\Cmat - \Smat\Cmat\bm{\varepsilon}\|_F$ & $< 10^{-12}$ & Eigenvalue equation \\
+$|\varepsilon_{\text{ours}} - \varepsilon_{\text{scipy}}|$ & $< 10^{-12}$ & Cross-validation \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{warningbox}[Common Student Errors]
+\begin{enumerate}
+    \item \textbf{Forgetting to back-transform:} Using $\Cmat'$ instead of $\Cmat = \Xmat\Cmat'$ gives MOs that are not orthonormal under $\Smat$.
+
+    \item \textbf{Wrong matrix order:} $\Fmat' = \Xmat\Fmat\Xmat\T$ is incorrect; must be $\Fmat' = \Xmat\T\Fmat\Xmat$.
+
+    \item \textbf{Checking wrong orthonormality:} Testing $\Cmat\T\Cmat = \mat{I}$ instead of $\Cmat\T\Smat\Cmat = \mat{I}$.
+\end{enumerate}
+\end{warningbox}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Additional Notes for Instructors}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Common Misconceptions}
+
+\begin{enumerate}
+    \item \textbf{``More basis functions is always better'':} Near-linear dependence can make calculations worse, not just slower.
+
+    \item \textbf{``Eigenvalue thresholding loses accuracy'':} It removes numerically meaningless directions; the physical content is preserved.
+
+    \item \textbf{``Gram--Schmidt is production-ready'':} It builds intuition but should not be used in real codes due to stability issues.
+
+    \item \textbf{``BSSE and linear dependence are the same'':} They are distinct phenomena with opposite trends vs basis size.
+\end{enumerate}
+
+\subsection{Suggested Discussion Questions}
+
+\begin{enumerate}
+    \item Why does PySCF default to spherical Gaussians rather than Cartesian?
+
+    \item If thresholding removes basis directions, how do we know we haven't removed something important?
+
+    \item What happens to the MO energies if we use an ill-conditioned basis without thresholding?
+
+    \item Why is the overlap matrix computed once and reused, while the Fock matrix is recomputed at each SCF iteration?
+\end{enumerate}
+
+\subsection{Extensions for Advanced Students}
+
+\begin{enumerate}
+    \item Implement pivoted Cholesky and compare with eigenvalue thresholding for ill-conditioned cases.
+
+    \item Study how the eigenvalue spectrum of $\Smat$ changes with molecular geometry (bond stretching).
+
+    \item Investigate the relationship between basis set condition number and SCF convergence rate.
+
+    \item Compare computational cost of Cholesky vs eigendecomposition for various system sizes.
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{References}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{enumerate}
+    \item Boys, S.F. (1950). ``Electronic wave functions. I. A general method of calculation for the stationary states of any molecular system.'' \textit{Proc. R. Soc. A} \textbf{200}, 542--554.
+
+    \item L\"owdin, P.O. (1950). ``On the Non-Orthogonality Problem Connected with the Use of Atomic Wave Functions in the Theory of Molecules and Crystals.'' \textit{J. Chem. Phys.} \textbf{18}, 365--375.
+
+    \item Roothaan, C.C.J. (1951). ``New Developments in Molecular Orbital Theory.'' \textit{Rev. Mod. Phys.} \textbf{23}, 69--89.
+
+    \item Szabo, A. \& Ostlund, N.S. (1989). \textit{Modern Quantum Chemistry}. Dover Publications. Chapter 3.
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Exercise Answer Keys}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Brief answers for the end-of-chapter exercises (Section 2.12).
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 2.1: Basis-Set Dependence of Conditioning [Core]}
+
+\begin{keyInsight}[Trend Analysis]
+For H$_2$O with fixed geometry, the overlap eigenvalue spectrum shows:
+
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+Basis & $N_{\text{AO}}$ & $\min(s_i)$ & $\kappa(\Smat)$ \\
+\midrule
+STO-3G & 7 & $\sim 0.35$ & $\sim 6$ \\
+cc-pVDZ & 24 & $\sim 0.025$ & $\sim 100$ \\
+aug-cc-pVDZ & 41 & $\sim 0.003$ & $\sim 1000$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Key trend:} Adding diffuse functions (aug-) decreases $\min(s_i)$ dramatically because
+diffuse functions on neighboring atoms have large mutual overlaps ($S_{\mu\nu} \approx 1$),
+creating near-linear dependence. The condition number grows roughly by an order of magnitude
+with each step up in basis quality.
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 2.2: Gram--Schmidt Ordering Dependence [Core]}
+
+\begin{keyInsight}[Key Observation]
+With permuted basis ordering ($\Smat' = \mathbf{P}\T\Smat\mathbf{P}$), the Gram--Schmidt
+orthogonalizers $\Xmat$ and $\Xmat'$ differ by more than just the permutation:
+\[
+\|\Xmat - \mathbf{P}\Xmat'\| \neq 0
+\]
+
+\textbf{Why:} Gram--Schmidt produces an orthonormal basis that depends on the processing order.
+The first vector is taken as-is (normalized), the second is orthogonalized against the first,
+etc. Different orderings give different triangular structures in the resulting transformation.
+
+\textbf{Lesson:} Gram--Schmidt is not unique; the result depends on input ordering.
+Symmetric orthogonalization ($\Smat^{-1/2}$) produces a unique result independent of
+basis ordering.
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 2.3: Symmetric vs Canonical Orthogonalization [Core]}
+
+\begin{keyInsight}[Two Valid Orthogonalizers]
+Both satisfy $\Xmat\T\Smat\Xmat = \mat{I}$, but they are different matrices:
+
+\textbf{Canonical:} $\Xmat_{\text{can}} = \mat{U}\mathbf{s}^{-1/2}$
+\begin{itemize}
+    \item Rectangular ($N \times M$ if thresholding applied)
+    \item Columns are not related to original AOs in an obvious way
+    \item Simpler to implement with thresholding
+\end{itemize}
+
+\textbf{Symmetric:} $\Xmat_{\text{sym}} = \mat{U}\mathbf{s}^{-1/2}\mat{U}\T = \Smat^{-1/2}$
+\begin{itemize}
+    \item Square ($N \times N$) if no thresholding
+    \item Orthonormalized AOs are ``closest'' to original AOs (L\"owdin)
+    \item Preserves symmetry properties of original basis
+\end{itemize}
+
+Numerically: $\|\Xmat_{\text{can}} - \Xmat_{\text{sym}}\| \gg 0$, but both are valid.
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 2.4: Generalized Eigenproblem Consistency [Core]}
+
+\begin{keyInsight}[Verification Checklist]
+For $\Fmat\Cmat = \Smat\Cmat\bm{\varepsilon}$ solved via orthogonalization:
+
+\begin{enumerate}
+    \item \textbf{MO orthonormality:} $\|\Cmat\T\Smat\Cmat - \mat{I}\|_F < 10^{-12}$
+    \item \textbf{Eigenvalue equation:} $\|\Fmat\Cmat - \Smat\Cmat\bm{\varepsilon}\|_F < 10^{-12}$
+    \item \textbf{Cross-validation:} Eigenvalues match \texttt{scipy.linalg.eigh(F, S)} to $< 10^{-12}$
+\end{enumerate}
+
+\textbf{Common error:} Using $\Cmat' = \Xmat\T\Cmat_{\text{ordinary}}$ instead of
+$\Cmat = \Xmat\Cmat'$ for back-transformation. The correct sequence is:
+\[
+\Fmat' = \Xmat\T\Fmat\Xmat, \quad
+\Fmat'\Cmat' = \Cmat'\bm{\varepsilon}, \quad
+\Cmat = \Xmat\Cmat'
+\]
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 2.5: Why Does Thresholding Not ``Change Chemistry''? [Advanced]}
+
+\begin{keyInsight}[Conceptual Argument]
+A small eigenvalue $s_i \ll 1$ means the corresponding eigenvector
+$\tilde{\chi}_i = \sum_\mu U_{\mu i}\chi_\mu$ has $\langle\tilde{\chi}_i|\tilde{\chi}_i\rangle = s_i \approx 0$.
+This combination is \emph{nearly the zero function}---it cannot distinguish any physical
+states and contributes only numerical noise.
+
+\textbf{Thresholding is numerical cleanup, not physical approximation:}
+\begin{itemize}
+    \item The molecule (nuclei, electrons) is unchanged
+    \item The Hilbert space being approximated is unchanged
+    \item We remove a redundant parameterization that creates numerical problems
+\end{itemize}
+
+\textbf{Exception---when thresholding can matter:}
+For properties requiring diffuse tails (polarizabilities, anion binding, Rydberg states),
+aggressive thresholding ($\tau > 10^{-6}$) might remove physically relevant directions.
+Use conservative thresholds ($\tau = 10^{-8}$ to $10^{-10}$) for such calculations.
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 2.6: Cartesian vs Spherical Gaussian Counting [Core]}
+
+\begin{keyInsight}[Counting Formulas]
+\textbf{(a) Oxygen with $[3s2p1d]$:}
+\begin{itemize}
+    \item Cartesian: $3 \times 1 + 2 \times 3 + 1 \times 6 = 3 + 6 + 6 = 15$
+    \item Spherical: $3 \times 1 + 2 \times 3 + 1 \times 5 = 3 + 6 + 5 = 14$
+\end{itemize}
+
+\textbf{(b) 10 heavy atoms $[4s3p2d1f]$ + 20 H atoms $[2s1p]$:}
+\begin{itemize}
+    \item Heavy (Cart): $10 \times (4 + 9 + 12 + 10) = 10 \times 35 = 350$
+    \item Heavy (Sph): $10 \times (4 + 9 + 10 + 7) = 10 \times 30 = 300$
+    \item H (both): $20 \times (2 + 3) = 100$
+    \item Total Cartesian: $350 + 100 = 450$
+    \item Total Spherical: $300 + 100 = 400$
+\end{itemize}
+
+\textbf{(d) Why difference grows with $L$:}
+Spurious components $= \frac{L(L-1)}{2}$: 0 for s/p, 1 for d, 3 for f, 6 for g.
+The $r^2$ contaminant in Cartesian d-functions is s-type; in f-functions, the $xr^2, yr^2, zr^2$ are p-type.
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 2.7: Thresholding Sensitivity Study [Advanced]}
+
+\begin{keyInsight}[Results for F$^-$/aug-cc-pVTZ]
+\textbf{Typical findings:}
+
+\begin{center}
+\begin{tabular}{cccc}
+\toprule
+$\tau$ & $M$ (kept) & $\varepsilon_{\min}$ (Hartree) & $\kappa(\Xmat\T\Smat\Xmat)$ \\
+\midrule
+$10^{-6}$ & $\sim 42$ & stable & $\sim 1$ \\
+$10^{-8}$ & $\sim 45$ & stable & $\sim 1$ \\
+$10^{-10}$ & $\sim 46$ & stable & $\sim 1$ \\
+$10^{-12}$ & 46 & may show noise & $> 1$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Practical choice:} $\tau = 10^{-7}$ to $10^{-8}$ balances stability and completeness.
+For anions, err on the side of keeping more functions ($\tau = 10^{-8}$).
+
+\textbf{Instability signature:} When $\tau$ is too small, $\kappa(\Xmat\T\Smat\Xmat) > 10$
+and eigenvalues show iteration-to-iteration fluctuations.
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 2.8: GTO Normalization Verification [Core]}
+
+\begin{keyInsight}[Normalization Constants]
+\textbf{(a) s-type ($l=m=n=0$) with $\alpha=1.0$:}
+\[
+N_{000}(\alpha) = \left(\frac{2\alpha}{\pi}\right)^{3/4} = \left(\frac{2}{\pi}\right)^{3/4} \approx 0.7127
+\]
+
+\textbf{(b) Numerical verification:}
+Using \texttt{scipy.integrate.tplquad} over $[-L, L]^3$ with $L \approx 5$ (Gaussian
+decays rapidly), the integral $\int |g_{000}|^2 d\mathbf{r} \approx 1.0$ to 6+ digits.
+
+\textbf{(c) p-type ($l=1, m=n=0$):}
+\[
+N_{100}(\alpha) = \left(\frac{2\alpha}{\pi}\right)^{3/4} \cdot \sqrt{\frac{4\alpha}{1}} = 2^{5/4}\alpha^{5/4}\pi^{-3/4}
+\]
+For $\alpha = 1.0$: $N_{100} \approx 1.425$
+
+\textbf{(d) Contracted normalization:}
+The contracted function $\chi = \sum_p d_p g_p$ has cross-terms:
+\[
+\langle\chi|\chi\rangle = \sum_{p,q} d_p d_q \langle g_p|g_q\rangle = \sum_{p,q} d_p d_q S_{pq}
+\]
+The primitive overlap $S_{pq} \neq \delta_{pq}$ when $\alpha_p \neq \alpha_q$, so
+the contracted normalization is \emph{not} $\sum_p d_p N_p$ but involves all pairwise
+overlaps. Modern basis sets provide pre-normalized contraction coefficients.
+\end{keyInsight}
+
+\end{document}

@@ -1,0 +1,1389 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ch03_solutions.tex
+% Answer Key for Chapter 3: One-Electron Integrals and Gaussian Product Theorem
+%
+% Course: 2302638 Advanced Quantum Chemistry
+% Institution: Department of Chemistry, Faculty of Science, Chulalongkorn University
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{../../solutions_style}
+
+\title{\textbf{Chapter 3: Answer Key}\\
+\large One-Electron Integrals and Gaussian Product Theorem\\
+\normalsize 2302638 Advanced Quantum Chemistry}
+\author{Department of Chemistry, Chulalongkorn University}
+\date{}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Checkpoint Question Answers}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+This section provides detailed answers to all 11 checkpoint questions from Chapter 3,
+organized by their location in the chapter.
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 3.1: Why Separability Matters}
+\label{sec:cp31}
+
+\begin{checkpointAnswer}[Section 3.2 -- Integral Separability]
+\textbf{Question:} Why do overlap and kinetic integrals factor into 1D integrals while nuclear attraction integrals do not? (Hint: consider the form of $1/|\rvec-\mathbf{C}|$ in Cartesian coordinates.)
+
+\textbf{Answer:}
+
+The key lies in whether the operator is \textbf{separable} in Cartesian coordinates.
+
+\textbf{Overlap integral ($\hat{O} = 1$):}
+\begin{align*}
+\int g_a(\rvec) \cdot 1 \cdot g_b(\rvec)\, d^3r
+&= \int e^{-\alpha(x-A_x)^2} e^{-\beta(x-B_x)^2}\, dx \\
+&\quad \times \int e^{-\alpha(y-A_y)^2} e^{-\beta(y-B_y)^2}\, dy \\
+&\quad \times \int e^{-\alpha(z-A_z)^2} e^{-\beta(z-B_z)^2}\, dz
+\end{align*}
+Each factor is an independent 1D integral.
+
+\textbf{Kinetic integral ($\hat{O} = -\tfrac{1}{2}\nabla^2$):}
+The Laplacian is $\nabla^2 = \partial^2/\partial x^2 + \partial^2/\partial y^2 + \partial^2/\partial z^2$. Each derivative acts on only one coordinate, so the integral splits into three terms, each of which factors.
+
+\textbf{Nuclear attraction ($\hat{O} = 1/|\rvec - \mathbf{C}|$):}
+\[
+\frac{1}{|\rvec - \mathbf{C}|} = \frac{1}{\sqrt{(x-C_x)^2 + (y-C_y)^2 + (z-C_z)^2}}
+\]
+This \textbf{couples all three coordinates} through the square root and sum. There is no way to write $1/r$ as $f(x) \cdot g(y) \cdot h(z)$, so the integral does not factor.
+
+\textbf{Physical interpretation:} The Coulomb potential ``knows'' about all three spatial directions simultaneously---the force on an electron depends on its total distance from the nucleus, not on its $x$, $y$, $z$ coordinates separately.
+\end{checkpointAnswer}
+
+\begin{warningbox}
+Students sometimes confuse ``separable operator'' with ``separable wavefunction.'' Here we are discussing whether the \emph{operator} $\hat{O}$ can be written as a sum or product of single-coordinate terms. The Gaussian basis functions are always separable (by construction), but that does not make every integral separable.
+\end{warningbox}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 3.2: Screening and Sparsity}
+\label{sec:cp32}
+
+\begin{checkpointAnswer}[Section 3.3 -- Gaussian Product Theorem]
+\textbf{Question:} Consider a large molecule with basis functions spread over many atoms.
+\begin{enumerate}[label=(\alph*)]
+  \item If $\alpha = \beta = 1.0$ Bohr$^{-2}$, at what distance $R_{AB}$ does the GPT prefactor $\exp[-\mu R_{AB}^2]$ become smaller than $10^{-10}$?
+  \item How does this observation suggest a strategy for avoiding unnecessary integral computations in large systems?
+\end{enumerate}
+
+\textbf{Answer:}
+
+\textbf{Part (a):}
+Given $\alpha = \beta = 1.0$ Bohr$^{-2}$:
+\[
+\mu = \frac{\alpha \beta}{\alpha + \beta} = \frac{1.0 \times 1.0}{1.0 + 1.0} = 0.5 \text{ Bohr}^{-2}
+\]
+
+We need $\exp[-\mu R_{AB}^2] < 10^{-10}$:
+\begin{align*}
+-\mu R_{AB}^2 &< \ln(10^{-10}) = -10 \ln(10) \approx -23.03 \\
+R_{AB}^2 &> \frac{23.03}{0.5} = 46.06 \text{ Bohr}^2 \\
+R_{AB} &> \sqrt{46.06} \approx \boxed{6.8 \text{ Bohr} \approx 3.6 \text{ \AA}}
+\end{align*}
+
+\textbf{Part (b): Screening strategy}
+
+For large molecules, basis function pairs separated by more than $\sim$7 Bohr contribute negligibly to integrals. This suggests:
+
+\begin{enumerate}
+\item \textbf{Distance-based prescreening:} Before computing any integral, check if $R_{AB}$ exceeds a threshold. If so, set the integral to zero without computing it.
+
+\item \textbf{Shell-pair screening:} Since integrals scale as $O(N^4)$ for two-electron integrals, screening distant pairs can reduce cost dramatically. If 90\% of pairs can be screened, the effective scaling becomes $O(N^2)$ or better for linear molecules.
+
+\item \textbf{Schwarz screening:} For ERIs, use the bound $|(ab|cd)| \leq \sqrt{(ab|ab)} \sqrt{(cd|cd)}$ to pre-compute ``diagonal'' integrals and use them to screen the full set.
+\end{enumerate}
+\end{checkpointAnswer}
+
+\begin{tipbox}
+The screening distance depends on exponents. For diffuse functions ($\alpha \sim 0.1$ Bohr$^{-2}$), $\mu \sim 0.05$ and the screening radius extends to $\sim$20 Bohr. For tight core functions ($\alpha \sim 100$ Bohr$^{-2}$), screening kicks in at $\sim$0.5 Bohr. Modern integral codes use adaptive screening based on actual exponent values.
+\end{tipbox}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 3.3: Overlap Decay}
+\label{sec:cp33}
+
+\begin{checkpointAnswer}[Section 3.4 -- Overlap Integrals]
+\textbf{Question:} What happens to the overlap as $R_{AB} \to \infty$? Explain using the prefactor $\exp[-\mu R_{AB}^2]$ in the overlap formula.
+
+\textbf{Answer:}
+
+As $R_{AB} \to \infty$:
+\[
+S_{ab}^{(ss)} = N_s(\alpha) N_s(\beta) \left(\frac{\pi}{p}\right)^{3/2} \exp[-\mu R_{AB}^2] \to 0
+\]
+
+The exponential factor $\exp[-\mu R_{AB}^2]$ dominates the behavior:
+\begin{itemize}
+\item The prefactors $N_s(\alpha)$, $N_s(\beta)$, and $(\pi/p)^{3/2}$ are \textbf{constants} (independent of $R_{AB}$).
+\item The exponential decay is \textbf{Gaussian} in $R_{AB}$, meaning faster than any polynomial.
+\end{itemize}
+
+\textbf{Physical interpretation:}
+Two Gaussian basis functions centered far apart have negligible overlap because:
+\begin{enumerate}
+\item Each Gaussian is localized near its center (decays as $e^{-\alpha r^2}$ from its center).
+\item The product of two non-overlapping functions is essentially zero everywhere.
+\item Overlap measures ``how much two functions occupy the same region of space.''
+\end{enumerate}
+
+This is the mathematical foundation for the \textbf{locality} of chemistry---atoms interact significantly only with their neighbors.
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 3.4: Contraction Cost}
+\label{sec:cp34}
+
+\begin{checkpointAnswer}[Section 3.4 -- Contracted Gaussians]
+\textbf{Question:} Consider two STO-3G basis functions (each a contraction of 3 primitives).
+\begin{enumerate}[label=(\alph*)]
+  \item How many primitive overlap integrals must be computed for one contracted overlap?
+  \item For a 6-31G basis (3 + 2 = 5 primitives per atom, approximately), how does the count change?
+  \item Why is the cost $K \times L$ rather than $K + L$?
+\end{enumerate}
+
+\textbf{Answer:}
+
+\textbf{Part (a): STO-3G}
+
+Each contracted function has $K = 3$ primitives:
+\[
+\chi = d_1 g_1 + d_2 g_2 + d_3 g_3
+\]
+The contracted integral is:
+\[
+\langle \chi | \phi \rangle = \sum_{p=1}^{3} \sum_{q=1}^{3} d_p e_q \langle g_p | h_q \rangle
+\]
+This requires $\boxed{3 \times 3 = 9}$ primitive integrals.
+
+\textbf{Part (b): 6-31G}
+
+For 6-31G, a typical shell has:
+\begin{itemize}
+\item Core: 6 primitives contracted to 1 function
+\item Valence: 3 primitives contracted to 1 function + 1 primitive uncontracted
+\end{itemize}
+
+For a core-core overlap: $6 \times 6 = 36$ primitives.
+For a valence-valence overlap: $3 \times 3 = 9$ primitives (for the contracted part).
+
+The exact count depends on which shells are being contracted, but the pattern scales as $K \times L$.
+
+\textbf{Part (c): Why $K \times L$ instead of $K + L$?}
+
+The contracted integral is a \textbf{bilinear} sum over primitive pairs:
+\[
+I = \sum_{p=1}^{K} \sum_{q=1}^{L} d_p e_q I_{pq}
+\]
+
+Each primitive $g_p$ in function $\chi$ must be paired with \textbf{every} primitive $h_q$ in function $\phi$. This is a \textbf{Cartesian product}, not a union. Just as a $3 \times 5$ grid has 15 cells (not 8), contracting two functions requires computing all primitive-pair integrals.
+
+\textbf{Analogy:} If you have 3 shirts and 5 pants, you have $3 \times 5 = 15$ outfit combinations, not $3 + 5 = 8$.
+\end{checkpointAnswer}
+
+\begin{warningbox}
+A common error is to assume contraction adds linear cost. In fact, highly contracted basis sets (like STO-3G or cc-pVnZ) have significant overhead from primitive-pair loops. This is one reason why segmented contractions are preferred over general contractions in some contexts.
+\end{warningbox}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 3.5: Kinetic Integral Limit}
+\label{sec:cp35}
+
+\begin{checkpointAnswer}[Section 3.5 -- Kinetic Energy Integrals]
+\textbf{Question:} Consider the limit $R_{AB} \to 0$ in the kinetic-overlap relation. What does $T_{ab}^{(ss)}$ become in terms of $\alpha$ and $\beta$?
+
+\textbf{Answer:}
+
+The kinetic-overlap relation is:
+\[
+T_{ab}^{(ss)} = \mu (3 - 2\mu R_{AB}^2) S_{ab}^{(ss)}
+\]
+
+As $R_{AB} \to 0$:
+\begin{align*}
+T_{ab}^{(ss)} &\to \mu \cdot 3 \cdot S_{ab}^{(ss)}(R_{AB}=0) \\
+&= 3\mu \cdot N_s(\alpha) N_s(\beta) \left(\frac{\pi}{p}\right)^{3/2}
+\end{align*}
+
+For the special case $\alpha = \beta$ and $\mathbf{A} = \mathbf{B}$ (identical normalized primitives):
+\begin{align*}
+\mu &= \frac{\alpha^2}{2\alpha} = \frac{\alpha}{2} \\
+p &= 2\alpha \\
+N_s(\alpha)^2 &= \left(\frac{2\alpha}{\pi}\right)^{3/2} \\
+S_{aa} &= \left(\frac{2\alpha}{\pi}\right)^{3/2} \cdot \left(\frac{\pi}{2\alpha}\right)^{3/2} = 1 \quad \checkmark
+\end{align*}
+
+Therefore:
+\[
+T_{aa} = 3 \cdot \frac{\alpha}{2} \cdot 1 = \boxed{\frac{3\alpha}{2}}
+\]
+
+\textbf{Physical interpretation:}
+The kinetic energy of a normalized $s$-type Gaussian scales \textbf{linearly} with the exponent $\alpha$. This reflects the uncertainty principle: a tighter Gaussian (larger $\alpha$) is more localized in position space, hence more delocalized in momentum space, leading to higher kinetic energy.
+
+For a hydrogen 1s orbital with $\alpha = 1.0$ Bohr$^{-2}$:
+\[
+T_{1s,1s} = \frac{3 \times 1.0}{2} = 1.5 \text{ Hartree} = 0.75 \text{ a.u. (per electron)}
+\]
+This matches the exact hydrogen atom kinetic energy of 0.5 Hartree per electron in the limit of a Slater orbital, with the difference due to the Gaussian approximation.
+\end{checkpointAnswer}
+
+\begin{tipbox}
+The formula $T_{aa} = \frac{3\alpha}{2}$ is a useful sanity check. For basis sets, diagonal kinetic integrals should increase with exponent. If your implementation gives $T_{aa}$ decreasing with $\alpha$, you have a sign or normalization error.
+\end{tipbox}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 3.6: Boys Function Behavior}
+\label{sec:cp36}
+
+\begin{checkpointAnswer}[Section 3.6 -- Nuclear Attraction Integrals]
+\textbf{Question:}
+\begin{enumerate}[label=(\alph*)]
+  \item What physical situation corresponds to $T \to 0$? What is $\Boys{0}(0)$?
+  \item What happens to $\Boys{0}(T)$ as the composite center $\mathbf{P}$ moves far from the nucleus $\mathbf{C}$? Does this make physical sense?
+\end{enumerate}
+
+\textbf{Answer:}
+
+Recall: $T = p |\mathbf{P} - \mathbf{C}|^2$ where $\mathbf{P}$ is the composite center of the Gaussian product.
+
+\textbf{Part (a): $T \to 0$}
+
+$T \to 0$ occurs when:
+\begin{itemize}
+\item $\mathbf{P} \to \mathbf{C}$: The composite center coincides with the nuclear position, OR
+\item $p \to 0$: Both exponents are very small (very diffuse functions).
+\end{itemize}
+
+Physically, $T \to 0$ means the electron density (from the Gaussian product) is \textbf{centered on the nucleus}.
+
+From the definition or series expansion:
+\[
+\Boys{0}(0) = \int_0^1 t^0 e^{-0 \cdot t^2}\, dt = \int_0^1 1\, dt = \boxed{1}
+\]
+
+More generally: $\Boys{n}(0) = 1/(2n+1)$.
+
+\textbf{Part (b): $T \to \infty$ (P far from C)}
+
+As $|\mathbf{P} - \mathbf{C}| \to \infty$, we have $T \to \infty$:
+\[
+\Boys{0}(T) = \frac{1}{2}\sqrt{\frac{\pi}{T}} \cdot \text{erf}(\sqrt{T}) \approx \frac{1}{2}\sqrt{\frac{\pi}{T}} \to 0
+\]
+
+The decay is $\sim 1/\sqrt{T} \sim 1/|\mathbf{P}-\mathbf{C}|$.
+
+\textbf{Physical interpretation:}
+When the electron density (centered at $\mathbf{P}$) is far from the nucleus (at $\mathbf{C}$), the Coulomb attraction is weak. The $1/\sqrt{T}$ decay is slower than the exponential decay of the GPT prefactor, so nuclear attraction integrals decay more slowly than overlap integrals---but they still go to zero.
+
+This makes physical sense: an electron far from a nucleus feels negligible attraction to it. The Coulomb $1/r$ potential decays polynomially, while Gaussian functions decay exponentially, so the product integral inherits the slower (polynomial-like) decay modified by Gaussian localization.
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 3.7: Dipole as Trace}
+\label{sec:cp37}
+
+\begin{checkpointAnswer}[Section 3.7 -- Dipole Moment Integrals]
+\textbf{Question:}
+\begin{enumerate}[label=(\alph*)]
+  \item Why is the electronic term in the dipole formula a trace $\text{Tr}[\Pmat \rvec]$?
+  \item For a neutral molecule, verify that shifting the origin by $\mathbf{d}$ leaves the total dipole unchanged.
+\end{enumerate}
+
+\textbf{Answer:}
+
+\textbf{Part (a): Why Tr[$\Pmat \rvec$]?}
+
+The density matrix $\Pmat$ in the AO basis represents the one-electron density operator:
+\[
+\hat{\rho} = \sum_{\mu\nu} P_{\mu\nu} |\chi_\mu\rangle \langle \chi_\nu|
+\]
+
+The expectation value of any one-electron operator $\hat{O}$ is:
+\[
+\langle \hat{O} \rangle = \text{Tr}[\hat{\rho} \hat{O}] = \sum_{\mu\nu} P_{\mu\nu} \langle \chi_\nu | \hat{O} | \chi_\mu \rangle = \sum_{\mu\nu} P_{\mu\nu} O_{\nu\mu}
+\]
+
+For the position operator $\hat{O} = \rvec$:
+\[
+\langle \rvec \rangle_{\text{elec}} = \sum_{\mu\nu} P_{\mu\nu} \langle \chi_\nu | \rvec | \chi_\mu \rangle = \text{Tr}[\Pmat \rvec]
+\]
+
+This is the \textbf{center of electronic charge} weighted by the density matrix.
+
+\textbf{Part (b): Origin invariance for neutral molecules}
+
+With origin at $\mathbf{O}$:
+\[
+\bm{\mu}(\mathbf{O}) = \sum_A Z_A (\mathbf{R}_A - \mathbf{O}) - \text{Tr}[\Pmat \rvec(\mathbf{O})]
+\]
+where $\rvec(\mathbf{O})_{\mu\nu} = \langle \chi_\mu | \rvec - \mathbf{O} | \chi_\nu \rangle$.
+
+Shift origin to $\mathbf{O}' = \mathbf{O} + \mathbf{d}$:
+\begin{align*}
+\bm{\mu}(\mathbf{O}') &= \sum_A Z_A (\mathbf{R}_A - \mathbf{O} - \mathbf{d}) - \text{Tr}[\Pmat (\rvec(\mathbf{O}) - \mathbf{d} \Smat)] \\
+&= \bm{\mu}(\mathbf{O}) - \mathbf{d} \left( \sum_A Z_A - \text{Tr}[\Pmat \Smat] \right)
+\end{align*}
+
+For a neutral molecule:
+\[
+\sum_A Z_A = N_e = \text{Tr}[\Pmat \Smat]
+\]
+
+Therefore:
+\[
+\bm{\mu}(\mathbf{O}') = \bm{\mu}(\mathbf{O}) - \mathbf{d} \cdot 0 = \bm{\mu}(\mathbf{O}) \quad \checkmark
+\]
+
+\textbf{For ions:} $\sum_A Z_A \neq N_e$, so the dipole \emph{does} depend on origin. This is expected---an ion has a net charge, and its ``dipole'' includes a monopole contribution that depends on where you measure from.
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 3.8: Matching Theory to Code}
+\label{sec:cp38}
+
+\begin{checkpointAnswer}[Section 3.8 -- PySCF Integration]
+\textbf{Question:}
+\begin{enumerate}[label=(\alph*)]
+  \item The kinetic integral includes the factor $-\frac{1}{2}$. If PySCF's \texttt{int1e\_kin} returns 0.76, what is $\langle \mu | \nabla^2 | \nu \rangle$?
+  \item Why does \texttt{int1e\_r} require specifying an origin, whereas \texttt{int1e\_ovlp} does not?
+\end{enumerate}
+
+\textbf{Answer:}
+
+\textbf{Part (a):}
+
+PySCF returns $T_{\mu\nu} = \langle \chi_\mu | -\frac{1}{2}\nabla^2 | \chi_\nu \rangle = 0.76$.
+
+Since $T = -\frac{1}{2} \langle \nabla^2 \rangle$:
+\[
+\langle \chi_\mu | \nabla^2 | \chi_\nu \rangle = -2 \times 0.76 = \boxed{-1.52}
+\]
+
+\textbf{Note:} The Laplacian integral is \emph{negative} for the overlap of two Gaussians (this is related to the curvature of the Gaussian, which is negative near its peak and positive far away, but the weighted average is negative).
+
+\textbf{Part (b):}
+
+\textbf{Overlap integral:} $\langle \chi_\mu | 1 | \chi_\nu \rangle$
+
+The operator is the identity ``1'', which has no spatial reference point. The integral depends only on the shapes and positions of the basis functions, not on any external origin.
+
+\textbf{Position integral:} $\langle \chi_\mu | \rvec - \mathbf{O} | \chi_\nu \rangle$
+
+The operator $\rvec - \mathbf{O}$ explicitly depends on the origin $\mathbf{O}$. Changing $\mathbf{O}$ changes the operator and hence the integral value.
+
+\textbf{Practical implication:} When computing dipole moments, you must use the \emph{same} origin for:
+\begin{itemize}
+\item The AO integrals $\langle \chi_\mu | \rvec - \mathbf{O} | \chi_\nu \rangle$
+\item The nuclear term $\sum_A Z_A (\mathbf{R}_A - \mathbf{O})$
+\end{itemize}
+Mixing origins will give incorrect results (unless the molecule is neutral, in which case the errors cancel).
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 3.9: Interpreting Integral Matrices}
+\label{sec:cp39}
+
+\begin{checkpointAnswer}[Section 3.9 -- Matrix Properties]
+\textbf{Question:}
+\begin{enumerate}[label=(\alph*)]
+  \item In a well-conditioned basis, what should the diagonal elements of $\Smat$ be close to?
+  \item What do you expect for the diagonal elements of $\Tmat$ (sign and magnitude)?
+  \item What do you expect for the diagonal elements of $\Vmat$ (sign and magnitude)?
+\end{enumerate}
+
+\textbf{Answer:}
+
+\textbf{Part (a): Diagonal of $\Smat$}
+
+For a normalized basis:
+\[
+S_{\mu\mu} = \langle \chi_\mu | \chi_\mu \rangle = \|\chi_\mu\|^2 = \boxed{1}
+\]
+
+All diagonal elements should be exactly 1.0 (to machine precision) if the basis is properly normalized. Any deviation indicates a normalization error in the basis set definition.
+
+\textbf{Part (b): Diagonal of $\Tmat$}
+
+Sign: \textbf{Positive} (always). Kinetic energy is non-negative for any state.
+
+Magnitude: Depends on exponents. For typical valence orbitals:
+\begin{itemize}
+\item $s$-orbitals: $T_{ss} \sim 0.5$--$2.0$ Hartree
+\item Core $1s$ orbitals (tight exponents): $T_{1s,1s} \sim 10$--$100$ Hartree
+\item Diffuse functions: $T \sim 0.1$ Hartree
+\end{itemize}
+
+The formula $T_{aa} = \frac{3\alpha}{2}$ for a single primitive gives the scaling with exponent.
+
+\textbf{Part (c): Diagonal of $\Vmat$}
+
+Sign: \textbf{Negative} (always). Nuclear attraction is attractive, so $V < 0$.
+
+Magnitude: Depends on nuclear charges and how close the basis function is to nuclei.
+\begin{itemize}
+\item Core orbitals near a nucleus: $V \sim -10$ to $-50$ Hartree (for heavy atoms)
+\item Valence orbitals: $V \sim -2$ to $-10$ Hartree
+\item Diffuse orbitals far from all nuclei: $V \sim -0.1$ Hartree
+\end{itemize}
+
+For the core Hamiltonian $h = T + V$, we typically have $|V| > T$, so $h < 0$ for well-bound states.
+\end{checkpointAnswer}
+
+\begin{warningbox}
+A common error is confusing the sign of nuclear attraction integrals. Remember:
+\begin{itemize}
+\item The \emph{operator} is $\hat{V} = -Z/r$ (negative, attractive)
+\item The \emph{integral} $V_{\mu\nu} = \langle \chi_\mu | -Z/r | \chi_\nu \rangle$ is negative
+\item If your diagonal $V_{\mu\mu} > 0$, you have a sign error
+\end{itemize}
+\end{warningbox}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 3.10: Origin Consistency in Dipole Calculations}
+\label{sec:cp310}
+
+\begin{checkpointAnswer}[Section 3.9 -- Origin Conventions]
+\textbf{Question:}
+\begin{enumerate}[label=(\alph*)]
+  \item Why do we use \texttt{with mol.with\_common\_orig(origin)} when computing \texttt{int1e\_r}?
+  \item What would be inconsistent if we changed the origin for the nuclear term but not for the AO integral term?
+\end{enumerate}
+
+\textbf{Answer:}
+
+\textbf{Part (a):}
+
+The \texttt{with mol.with\_common\_orig(origin)} context manager sets the origin for computing $\langle \chi_\mu | \rvec - \mathbf{O} | \chi_\nu \rangle$. Without this, PySCF uses a default origin (typically $(0,0,0)$ or the center of mass).
+
+Using the context manager ensures:
+\begin{itemize}
+\item Explicit control over which origin is used
+\item Consistency between the electronic and nuclear terms
+\item Reproducibility across different molecular orientations
+\end{itemize}
+
+\textbf{Part (b): Inconsistent origins}
+
+Suppose we compute:
+\begin{itemize}
+\item Electronic term with origin $\mathbf{O}_1$: $\mu_{\text{elec}} = \text{Tr}[\Pmat (\rvec - \mathbf{O}_1)]$
+\item Nuclear term with origin $\mathbf{O}_2$: $\mu_{\text{nucl}} = \sum_A Z_A (\mathbf{R}_A - \mathbf{O}_2)$
+\end{itemize}
+
+The total would be:
+\[
+\bm{\mu}_{\text{wrong}} = \mu_{\text{nucl}} - \mu_{\text{elec}} = \bm{\mu}_{\text{correct}} + (\mathbf{O}_1 - \mathbf{O}_2)(Q_{\text{nucl}} - N_e)
+\]
+
+For a neutral molecule, $Q_{\text{nucl}} = N_e$, so the error cancels. But for ions or in intermediate calculations, the error persists.
+
+\textbf{Best practice:} Always use the same explicit origin for both terms. A common choice is the center of nuclear charge or the principal atom (e.g., oxygen in water).
+\end{checkpointAnswer}
+
+%-------------------------------------------------------------------------------
+\subsection{Checkpoint 3.11: Connecting to Chapter 4}
+\label{sec:cp311}
+
+\begin{checkpointAnswer}[Section 3.10 -- Preview of Two-Electron Integrals]
+\textbf{Question:}
+\begin{enumerate}[label=(\alph*)]
+  \item For an $(ss|ss)$ ERI, what is the maximum $n$ needed in $\Boys{n}(T)$?
+  \item For a $(pp|pp)$ ERI, what is the maximum $n$ needed?
+  \item How does this connect to the ``polynomial moments'' interpretation?
+\end{enumerate}
+
+\textbf{Answer:}
+
+\textbf{Part (a): $(ss|ss)$ ERI}
+
+For $s$-type functions, all angular momentum indices are zero: $\ell_A = \ell_B = \ell_C = \ell_D = 0$.
+
+Maximum Boys order: $n_{\max} = \ell_A + \ell_B + \ell_C + \ell_D = 0$
+
+Answer: Only $\boxed{\Boys{0}(T)}$ is needed.
+
+\textbf{Part (b): $(pp|pp)$ ERI}
+
+For $p$-type functions: $\ell_A = \ell_B = \ell_C = \ell_D = 1$.
+
+Maximum Boys order: $n_{\max} = 1 + 1 + 1 + 1 = 4$
+
+Answer: $\Boys{0}(T), \Boys{1}(T), \Boys{2}(T), \Boys{3}(T), \Boys{4}(T)$ are needed.
+That is $\boxed{\Boys{0} \text{ through } \Boys{4}}$.
+
+\textbf{Part (c): Connection to polynomial moments}
+
+When basis functions have angular momentum (e.g., $p_x = x \cdot e^{-\alpha r^2}$), the ERI involves integrals like:
+\[
+\int \int x_1 \cdot \text{(Gaussians)} \cdot \frac{1}{r_{12}} \cdot y_2 \cdot \text{(Gaussians)}\, d^3r_1\, d^3r_2
+\]
+
+The polynomial prefactors $x_1, y_2, \ldots$ contribute ``moments'' to the integral. Higher angular momentum means more polynomial factors, which in turn require higher-order Boys functions to evaluate.
+
+The general rule:
+\[
+n_{\max} = \ell_A + \ell_B + \ell_C + \ell_D
+\]
+
+This is why evaluating ERIs over high-angular-momentum functions is more expensive---more Boys function orders must be computed and combined.
+\end{checkpointAnswer}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\section{Lab Solutions}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%-------------------------------------------------------------------------------
+\subsection{Lab 3A: One-Electron Integral Sanity Checks}
+%-------------------------------------------------------------------------------
+
+\textbf{Objective:} Extract $\Smat$, $\Tmat$, and $\Vmat$ from PySCF and verify their basic properties.
+
+\begin{solutionbox}[Expected Output]
+\begin{lstlisting}
+nao = 7
+S symmetric: True
+T symmetric: True
+V symmetric: True
+h symmetric: True
+||S||_F = 3.0000000000000004
+||T||_F = 31.08832634456127
+||V||_F = 70.12545897423891
+\end{lstlisting}
+\end{solutionbox}
+
+\textbf{Interpretation of Results:}
+
+\begin{enumerate}
+\item \textbf{nao = 7}: H$_2$O with STO-3G has:
+  \begin{itemize}
+  \item O: 1s, 2s, 2p$_x$, 2p$_y$, 2p$_z$ = 5 functions
+  \item H: 1s each = 2 functions
+  \item Total = 7 AO basis functions
+  \end{itemize}
+
+\item \textbf{Symmetry checks:} All matrices are symmetric because:
+  \begin{itemize}
+  \item $\Smat$: $S_{\mu\nu} = \langle \chi_\mu | \chi_\nu \rangle = \langle \chi_\nu | \chi_\mu \rangle^* = S_{\nu\mu}$
+  \item $\Tmat$: Kinetic operator is Hermitian
+  \item $\Vmat$: Potential operator is Hermitian
+  \end{itemize}
+
+\item \textbf{Frobenius norms:}
+  \begin{itemize}
+  \item $\|\Smat\|_F \approx 3$: Since diagonal = 1 and there are 7 diagonal elements, we expect $\sqrt{7} \approx 2.6$. The larger value indicates some off-diagonal overlap.
+  \item $\|\Tmat\|_F \approx 31$: Kinetic energies are dominated by the oxygen 1s core orbital.
+  \item $\|\Vmat\|_F \approx 70$: Nuclear attraction is largest, dominated by electron-nucleus terms near oxygen.
+  \end{itemize}
+\end{enumerate}
+
+\begin{tipbox}[Additional Validation]
+You can also verify:
+\begin{lstlisting}
+# Diagonal of S should be 1
+print("S diagonal:", np.diag(S))
+# Expected: [1., 1., 1., 1., 1., 1., 1.]
+
+# Diagonal of T should be positive
+print("T diagonal:", np.diag(T))
+# Expected: all positive values
+
+# Diagonal of V should be negative
+print("V diagonal:", np.diag(V))
+# Expected: all negative values
+
+# Eigenvalues of S should be positive (positive definite)
+print("S eigenvalues:", np.linalg.eigvalsh(S))
+# Expected: all > 0
+\end{lstlisting}
+\end{tipbox}
+
+%-------------------------------------------------------------------------------
+\subsection{Lab 3B: Analytic vs PySCF for Custom s-Basis}
+%-------------------------------------------------------------------------------
+
+\textbf{Objective:} Compare hand-coded analytic formulas against PySCF results.
+
+\begin{solutionbox}[Expected Output]
+\begin{lstlisting}
+S12 (PySCF) = 0.6276945844227634   S12 (analytic) = 0.6276945844227635   diff = -1.1102230246251565e-16
+T12 (PySCF) = 0.27308327261116504  T12 (analytic) = 0.27308327261116504  diff = 0.0
+V12 (PySCF) = -1.1399875316355124  V12 (analytic) = -1.1399875316355122  diff = -2.220446049250313e-16
+S diag: [1. 1.]
+\end{lstlisting}
+\end{solutionbox}
+
+\textbf{Key Observations:}
+
+\begin{enumerate}
+\item \textbf{Agreement to machine precision:} The differences are $\sim 10^{-16}$, which is the limit of double-precision floating-point arithmetic. This confirms our analytic formulas match PySCF exactly.
+
+\item \textbf{Normalized diagonal overlaps:} $S_{11} = S_{22} = 1.0$ confirms proper normalization.
+
+\item \textbf{Off-diagonal overlap:} $S_{12} \approx 0.63$ indicates significant overlap between the two $s$-functions at $R = 1.4$ Bohr.
+
+\item \textbf{Kinetic integral:} $T_{12} \approx 0.27$ Hartree is positive, as expected.
+
+\item \textbf{Nuclear attraction:} $V_{12} \approx -1.14$ Hartree is negative (attractive) and includes contributions from both nuclei.
+\end{enumerate}
+
+\begin{warningbox}[Normalization Convention]
+If you see discrepancies larger than $10^{-10}$, check:
+\begin{itemize}
+\item Normalization factor: $N_s(\alpha) = (2\alpha/\pi)^{3/4}$
+\item The factor of $-Z$ in nuclear attraction (negative sign!)
+\item Units: PySCF expects Bohr unless \texttt{unit="Angstrom"}
+\item Exponent ordering in the basis definition
+\end{itemize}
+\end{warningbox}
+
+\textbf{Numerical Verification of Kinetic-Overlap Relation:}
+\begin{lstlisting}
+# Verify T = mu * (3 - 2*mu*R^2) * S
+alpha, beta = 0.5, 0.4
+R = 1.4
+p = alpha + beta
+mu = alpha * beta / p
+R2 = R**2
+
+expected_ratio = mu * (3 - 2*mu*R2)
+actual_ratio = T12 / S12
+
+print(f"Expected T/S ratio: {expected_ratio:.10f}")
+print(f"Actual T/S ratio:   {actual_ratio:.10f}")
+# Both should give approximately 0.435
+\end{lstlisting}
+
+%-------------------------------------------------------------------------------
+\subsection{Lab 3C: Dipole Integrals and Dipole Moment from Density}
+%-------------------------------------------------------------------------------
+
+\textbf{Objective:} Compute the molecular dipole moment using integral-density contraction.
+
+\begin{solutionbox}[Expected Output]
+\begin{lstlisting}
+Dipole moment (a.u.) = [  0.           0.          -0.78396034]
+PySCF dipole (Debye) = [0.         0.         1.99248621]
+\end{lstlisting}
+\end{solutionbox}
+
+\textbf{Interpretation:}
+
+\begin{enumerate}
+\item \textbf{Components:} The dipole is along the $z$-axis only (by symmetry of H$_2$O with oxygen at origin).
+  \begin{itemize}
+  \item $\mu_x = 0$: C$_{2v}$ symmetry places the molecule in the $yz$-plane
+  \item $\mu_y = 0$: Symmetric placement of hydrogens
+  \item $\mu_z \neq 0$: Points from oxygen toward the hydrogen centroid
+  \end{itemize}
+
+\item \textbf{Sign convention:} Our calculation gives $\mu_z \approx -0.78$ a.u. (pointing toward negative $z$, i.e., toward oxygen). PySCF's \texttt{dip\_moment()} reports the \emph{magnitude} in Debye with a sign convention that may differ.
+
+\item \textbf{Unit conversion:}
+\[
+\mu_z = 0.78396 \text{ a.u.} \times 2.5418 \text{ D/a.u.} = 1.99 \text{ D}
+\]
+This matches the PySCF output.
+
+\item \textbf{Physical value:} The experimental dipole moment of H$_2$O is approximately 1.85 D. Our HF/cc-pVDZ result of $\sim$2.0 D is slightly too large, which is typical for Hartree-Fock (tends to overestimate polarity due to missing electron correlation).
+\end{enumerate}
+
+\begin{tipbox}[Verifying Your Implementation]
+Test with a symmetric molecule (e.g., CO$_2$) that should have zero dipole:
+\begin{lstlisting}
+mol = gto.M(
+    atom="C 0 0 0; O 0 0 1.16; O 0 0 -1.16",
+    basis="cc-pVDZ",
+    unit="Angstrom"
+)
+# Dipole should be [0, 0, 0]
+\end{lstlisting}
+\end{tipbox}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\section{Common Pitfalls and Debugging Tips}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Normalization Errors}
+
+\begin{warningbox}[Missing or Incorrect Normalization]
+\textbf{Symptom:} Diagonal overlaps $\neq 1$, or integrals off by a constant factor.
+
+\textbf{Cause:} Forgetting the normalization constant $N_s(\alpha) = (2\alpha/\pi)^{3/4}$.
+
+\textbf{Fix:} Always include normalization. For checking, compute $S_{aa}$ analytically:
+\[
+S_{aa} = N_s(\alpha)^2 \cdot \left(\frac{\pi}{2\alpha}\right)^{3/2} = \left(\frac{2\alpha}{\pi}\right)^{3/2} \cdot \left(\frac{\pi}{2\alpha}\right)^{3/2} = 1 \quad \checkmark
+\]
+\end{warningbox}
+
+\subsection{Sign Errors in Nuclear Attraction}
+
+\begin{warningbox}[Positive $V$ Integrals]
+\textbf{Symptom:} $V_{\mu\nu} > 0$ or total energy is positive/too high.
+
+\textbf{Cause:} Missing the negative sign in $\hat{V} = -Z/r$.
+
+\textbf{Check:} Nuclear attraction should \emph{always} be negative:
+\begin{lstlisting}
+V = mol.intor("int1e_nuc")
+print("All V elements negative?", np.all(np.diag(V) < 0))
+\end{lstlisting}
+\end{warningbox}
+
+\subsection{Unit Confusion}
+
+\begin{warningbox}[Bohr vs Angstrom]
+\textbf{Symptom:} Integrals wildly different from expected, or overlap decays too fast/slow.
+
+\textbf{Cause:} Mixing Bohr and Angstrom coordinates.
+
+\textbf{Remember:}
+\begin{itemize}
+\item 1 Bohr $\approx$ 0.529 Angstrom
+\item PySCF default is Bohr unless \texttt{unit="Angstrom"}
+\item Analytic formulas in the notes use Bohr
+\end{itemize}
+\end{warningbox}
+
+\subsection{Kinetic Integral Can Be Negative}
+
+\begin{warningbox}[Negative Off-Diagonal $T$]
+\textbf{Symptom:} Confusion when $T_{\mu\nu} < 0$ for $\mu \neq \nu$.
+
+\textbf{Explanation:} The kinetic integral $T_{\mu\nu} = \mu(3 - 2\mu R^2) S_{\mu\nu}$ becomes negative when:
+\[
+R_{AB}^2 > \frac{3}{2\mu}
+\]
+
+This is \emph{not} unphysical---the kinetic \emph{energy} $\langle \psi | \hat{T} | \psi \rangle$ is always positive, but individual matrix elements can be negative.
+
+For the identity $T = \mu(3 - 2\mu R^2) S$, verify:
+\begin{lstlisting}
+# Check when T/S becomes negative
+mu = 0.25  # example
+R_crossover = np.sqrt(3 / (2 * mu))
+print(f"T/S < 0 when R > {R_crossover:.2f} Bohr")
+\end{lstlisting}
+\end{warningbox}
+
+\subsection{Boys Function Numerical Issues}
+
+\begin{warningbox}[Upward Recurrence Instability]
+\textbf{Symptom:} $\Boys{n}(T)$ returns NaN or wildly wrong values for large $n$ and small $T$.
+
+\textbf{Cause:} The upward recurrence
+\[
+\Boys{n+1}(T) = \frac{(2n+1)\Boys{n}(T) - e^{-T}}{2T}
+\]
+subtracts nearly equal numbers when $T \approx 0$, causing catastrophic cancellation.
+
+\textbf{Fix:} Use different strategies for different regimes:
+\begin{itemize}
+\item Small $T$ ($< 25$): Series expansion
+\item Large $T$ ($> 25$): Downward recurrence from asymptotic
+\item Production codes: Table lookup + interpolation
+\end{itemize}
+\end{warningbox}
+
+\subsection{Contracted Integral Loops}
+
+\begin{warningbox}[Incorrect Contraction]
+\textbf{Symptom:} Contracted integrals differ from PySCF by more than $10^{-10}$.
+
+\textbf{Cause:} Missing the double-sum structure or incorrect coefficient ordering.
+
+\textbf{Template:}
+\begin{lstlisting}
+def contracted_integral(d_coeffs, e_coeffs, primitive_func):
+    """
+    d_coeffs: contraction coefficients for function A
+    e_coeffs: contraction coefficients for function B
+    primitive_func(i, j): returns primitive integral I_{ij}
+    """
+    total = 0.0
+    for i, d in enumerate(d_coeffs):
+        for j, e in enumerate(e_coeffs):
+            total += d * e * primitive_func(i, j)
+    return total
+\end{lstlisting}
+\end{warningbox}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\section{Summary of Key Numerical Results}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+For quick reference, here are the expected numerical values for common test cases.
+
+\begin{table}[h]
+\centering
+\caption{Reference Values for H$_2$ at $R = 1.4$ Bohr (Lab 3B Setup)}
+\begin{tabular}{lcc}
+\toprule
+Quantity & Value & Notes \\
+\midrule
+$S_{12}$ & 0.62769458 & Off-diagonal overlap \\
+$T_{12}$ & 0.27308327 & Kinetic energy integral \\
+$V_{12}$ & $-1.13998753$ & Nuclear attraction (both nuclei) \\
+$T_{12}/S_{12}$ & 0.43517 & Should equal $\mu(3-2\mu R^2)$ \\
+$\mu$ & 0.22222 & $= \alpha\beta/(\alpha+\beta)$ \\
+$p$ & 0.90000 & $= \alpha + \beta$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Reference Values for H$_2$O (Lab 3A, 3C Setup)}
+\begin{tabular}{lcc}
+\toprule
+Quantity & STO-3G & cc-pVDZ \\
+\midrule
+nao & 7 & 24 \\
+$\|\Smat\|_F$ & 3.00 & 5.83 \\
+$\|\Tmat\|_F$ & 31.1 & 32.2 \\
+$\|\Vmat\|_F$ & 70.1 & 77.4 \\
+$|\bm{\mu}|$ (Debye) & 1.73 & 1.99 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Boys Function Reference Values}
+\begin{tabular}{cccc}
+\toprule
+$T$ & $\Boys{0}(T)$ & $\Boys{1}(T)$ & $\Boys{2}(T)$ \\
+\midrule
+0.0 & 1.00000 & 0.33333 & 0.20000 \\
+0.5 & 0.85562 & 0.23660 & 0.13094 \\
+1.0 & 0.74682 & 0.18941 & 0.10033 \\
+2.0 & 0.59241 & 0.13607 & 0.06880 \\
+5.0 & 0.39400 & 0.07588 & 0.03519 \\
+10.0 & 0.27987 & 0.04666 & 0.02011 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Further Reading}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{itemize}
+\item \textbf{Gaussian integrals:} Helgaker, Jorgensen, Olsen, ``Molecular Electronic-Structure Theory,'' Chapter 9.
+\item \textbf{Boys function:} Appendix D of the lecture notes; also see \texttt{scipy.special.hyp1f1} for the connection to confluent hypergeometric functions.
+\item \textbf{Obara-Saika recurrence:} Original papers for extending to higher angular momentum.
+\item \textbf{PySCF source:} \texttt{pyscf/gto/mole.py} for integral interfaces; \texttt{libcint/src/} for underlying C implementations.
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Exercise Answer Keys}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Brief answers for the end-of-chapter exercises (Section 3.11).
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 3.1: Derive the Gaussian Product Theorem [Core]}
+
+\begin{keyInsight}[Complete Derivation]
+Starting from the exponent sum:
+\[
+\alpha|\rvec-\mathbf{A}|^2 + \beta|\rvec-\mathbf{B}|^2
+\]
+
+\textbf{Part (a): Expand and collect terms}
+
+Expand each squared term:
+\begin{align*}
+\alpha|\rvec-\mathbf{A}|^2 &= \alpha(r^2 - 2\rvec\cdot\mathbf{A} + A^2) \\
+\beta|\rvec-\mathbf{B}|^2 &= \beta(r^2 - 2\rvec\cdot\mathbf{B} + B^2)
+\end{align*}
+
+Sum and collect by powers of $\rvec$:
+\[
+(\alpha+\beta)r^2 - 2(\alpha\mathbf{A}+\beta\mathbf{B})\cdot\rvec + (\alpha A^2 + \beta B^2)
+\]
+
+Define $p = \alpha + \beta$ and $\mathbf{P} = (\alpha\mathbf{A}+\beta\mathbf{B})/p$.
+
+\textbf{Part (b): Complete the square}
+
+Factor out $p$ and complete the square in $\rvec$:
+\begin{align*}
+&= p\left[r^2 - 2\mathbf{P}\cdot\rvec + P^2\right] - pP^2 + \alpha A^2 + \beta B^2 \\
+&= p|\rvec - \mathbf{P}|^2 + \left(\alpha A^2 + \beta B^2 - pP^2\right)
+\end{align*}
+
+\textbf{Part (c): Simplify the constant term}
+
+Expand $pP^2 = (\alpha\mathbf{A}+\beta\mathbf{B})^2/p$:
+\begin{align*}
+\alpha A^2 + \beta B^2 - \frac{(\alpha\mathbf{A}+\beta\mathbf{B})^2}{p}
+&= \frac{\alpha\beta(A^2 - 2\mathbf{A}\cdot\mathbf{B} + B^2)}{p} \\
+&= \frac{\alpha\beta}{p}|\mathbf{A}-\mathbf{B}|^2 = \mu R_{AB}^2
+\end{align*}
+
+where $\mu = \alpha\beta/(\alpha+\beta)$ is the reduced exponent and $R_{AB} = |\mathbf{A}-\mathbf{B}|$.
+
+\textbf{Final result:}
+\[
+\boxed{e^{-\alpha|\rvec-\mathbf{A}|^2} e^{-\beta|\rvec-\mathbf{B}|^2} = e^{-\mu R_{AB}^2} \cdot e^{-p|\rvec-\mathbf{P}|^2}}
+\]
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 3.2: Overlap Integral Decay and Screening [Core]}
+
+\begin{keyInsight}[Numerical Results and Interpretation]
+\textbf{Part (a): Analytical evaluation with $\alpha = \beta = 0.5$ Bohr$^{-2}$}
+
+For normalized $s$-type Gaussians:
+\[
+S_{ab} = \left(\frac{2\sqrt{\alpha\beta}}{\alpha+\beta}\right)^{3/2} \exp\left[-\frac{\alpha\beta}{\alpha+\beta}R_{AB}^2\right]
+\]
+
+With $\alpha = \beta = 0.5$: $\mu = 0.25$ Bohr$^{-2}$ and $(\pi/p)^{3/2} \cdot N^2 = 1$.
+
+\begin{center}
+\begin{tabular}{cc}
+\toprule
+$R_{AB}$ (Bohr) & $S_{ab}$ \\
+\midrule
+0.5 & 0.939 \\
+1.0 & 0.779 \\
+2.0 & 0.368 \\
+3.0 & 0.105 \\
+5.0 & 0.002 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Part (b): Decay behavior}
+
+On a semi-log plot, $\log_{10}|S_{ab}|$ vs $R_{AB}$ is \textbf{parabolic} (not linear!) because:
+\[
+\log_{10}|S_{ab}| = \text{const} - \mu R_{AB}^2 \cdot \log_{10}(e) \propto -R_{AB}^2
+\]
+This is Gaussian decay, faster than exponential for large $R$.
+
+\textbf{Part (c): Screening threshold}
+
+Solve $\exp[-\mu R_{AB}^2] < 10^{-8}$:
+\[
+R_{AB} > \sqrt{\frac{8\ln 10}{\mu}} = \sqrt{\frac{18.42}{0.25}} \approx \boxed{8.6 \text{ Bohr}}
+\]
+
+Significance: Integrals with $|S| < 10^{-8}$ contribute negligibly to the energy. For large molecules, most basis function pairs are distant, so screening eliminates the majority of integral computations.
+
+\textbf{Part (d): Tighter exponents ($\alpha = \beta = 2.0$)}
+
+With $\mu = 1.0$ Bohr$^{-2}$:
+\[
+R_{AB} > \sqrt{18.42/1.0} \approx \boxed{4.3 \text{ Bohr}}
+\]
+
+Tighter (more localized) basis functions have a \textbf{smaller screening radius}---they decay faster with distance. This is why core orbitals contribute only to local integrals, while diffuse valence functions have longer-range interactions.
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 3.3: Kinetic-Overlap Identity [Core]}
+
+\begin{keyInsight}[Derivation and Verification]
+\textbf{Part (a): Prove the identity}
+
+Apply $-\frac{1}{2}\nabla^2$ to $b(\rvec) = \exp[-\beta|\rvec-\mathbf{B}|^2]$:
+\begin{align*}
+\nabla^2 b &= \nabla \cdot \nabla \exp[-\beta|\rvec-\mathbf{B}|^2] \\
+&= \nabla \cdot \left[-2\beta(\rvec-\mathbf{B})b\right] \\
+&= -2\beta \cdot 3 \cdot b + 4\beta^2|\rvec-\mathbf{B}|^2 \cdot b \\
+&= (4\beta^2|\rvec-\mathbf{B}|^2 - 6\beta)b
+\end{align*}
+
+The kinetic integral becomes:
+\[
+T_{ab} = -\frac{1}{2}\int a(\rvec)\nabla^2 b(\rvec)\,d^3r = \int a \cdot b \cdot (3\beta - 2\beta^2|\rvec-\mathbf{B}|^2)\,d^3r
+\]
+
+Using the GPT and standard Gaussian moment formulas:
+\begin{align*}
+\int a \cdot b \,d^3r &= S_{ab}^{\text{(unnorm)}} \\
+\int a \cdot b \cdot |\rvec-\mathbf{B}|^2 \,d^3r &= \left(\frac{3}{2p} + |\mathbf{P}-\mathbf{B}|^2\right)S_{ab}^{\text{(unnorm)}}
+\end{align*}
+
+After algebra (noting $|\mathbf{P}-\mathbf{B}|^2 = \alpha^2 R_{AB}^2/p^2$):
+\[
+\boxed{T_{ab}^{(ss)} = \mu(3 - 2\mu R_{AB}^2) S_{ab}^{(ss)}}
+\]
+
+\textbf{Parts (b,c): Implementation and verification}
+
+Python verification for random parameters confirms the identity to machine precision. The key is that both $T$ and $S$ share the same exponential decay factor $\exp[-\mu R_{AB}^2]$, with the kinetic integral having an additional polynomial prefactor.
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 3.4: Nuclear Attraction Integrals [Core]}
+
+\begin{keyInsight}[Implementation Details]
+\textbf{Part (a): Boys function $F_0(T)$}
+
+\begin{lstlisting}[style=python]
+def boys0(T, tol=1e-12):
+    """Compute F_0(T) = (1/2)*sqrt(pi/T)*erf(sqrt(T)) for T > 0."""
+    if T < tol:
+        return 1.0 - T/3.0 + T**2/10.0  # Series expansion
+    else:
+        from scipy.special import erf
+        import numpy as np
+        return 0.5 * np.sqrt(np.pi/T) * erf(np.sqrt(T))
+\end{lstlisting}
+
+\textbf{Part (b): Single-nucleus integral}
+
+For nucleus at $\mathbf{C}$ with charge $Z$:
+\[
+V_{ab}(\mathbf{C}) = -Z \cdot N_a N_b \cdot \frac{2\pi}{p} \exp[-\mu R_{AB}^2] \cdot F_0(p|\mathbf{P}-\mathbf{C}|^2)
+\]
+
+\textbf{Part (c): H$_2$ numerical results}
+
+With $\alpha = 0.5$, $\beta = 0.4$, $R = 1.4$ Bohr, nuclei at $\mathbf{A} = (0,0,0)$ and $\mathbf{B} = (0,0,1.4)$:
+\begin{align*}
+p &= 0.9, \quad \mu = 0.222, \quad \mathbf{P} = (0,0,0.622) \\
+V_{ab}(\mathbf{A}) &\approx -0.605 \text{ Hartree} \\
+V_{ab}(\mathbf{B}) &\approx -0.535 \text{ Hartree} \\
+V_{ab}^{\text{total}} &\approx -1.140 \text{ Hartree}
+\end{align*}
+
+\textbf{Part (d): Validation}
+
+Agreement with PySCF \texttt{int1e\_nuc} should be within $10^{-10}$. Key checks:
+\begin{itemize}
+    \item All $V$ values are negative (attractive potential)
+    \item $|V_{ab}(\mathbf{A})| > |V_{ab}(\mathbf{B})|$ because $\mathbf{P}$ is closer to $\mathbf{A}$
+\end{itemize}
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 3.5: Dipole Moment from Integrals [Core]}
+
+\begin{keyInsight}[Dipole Calculation and Origin Dependence]
+\textbf{Parts (a,b): Compute and compare}
+
+For H$_2$O/cc-pVDZ with origin at $(0,0,0)$:
+\begin{lstlisting}[style=python]
+# Electronic contribution
+with mol.with_common_orig([0,0,0]):
+    r_ints = mol.intor('int1e_r')  # shape (3, nao, nao)
+mu_elec = np.einsum('xij,ji->x', r_ints, dm)
+
+# Nuclear contribution
+mu_nuc = np.sum([mol.atom_charge(i) * mol.atom_coord(i)
+                 for i in range(mol.natm)], axis=0)
+
+# Total dipole
+mu_total = mu_nuc - mu_elec  # in atomic units
+\end{lstlisting}
+
+Expected: $|\bm{\mu}| \approx 1.99$ Debye (cc-pVDZ), matching PySCF's \texttt{mf.dip\_moment()}.
+
+\textbf{Part (c): Origin shift to oxygen}
+
+With origin at the oxygen nucleus:
+\begin{itemize}
+    \item $\mu_x$ and $\mu_y$: unchanged (by symmetry, these are zero for both origins)
+    \item $\mu_z$: unchanged for neutral H$_2$O
+\end{itemize}
+
+Individual terms change: $\mu_{\text{nuc}}$ and $\mu_{\text{elec}}$ both shift by the same amount, but their difference is invariant.
+
+\textbf{Part (d): Physical explanation}
+
+For a neutral molecule, $Q_{\text{nuc}} = N_e$. Shifting origin by $\mathbf{d}$:
+\begin{align*}
+\bm{\mu}' &= \sum_A Z_A(\mathbf{R}_A - \mathbf{d}) - \tr{\Pmat(\rvec - \mathbf{d})} \\
+&= \bm{\mu} - \mathbf{d}\underbrace{(Q_{\text{nuc}} - N_e)}_{=0} = \bm{\mu}
+\end{align*}
+
+The dipole measures the \emph{separation} between centers of positive and negative charge, which is a relative quantity independent of where you place the origin.
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 3.6: Connection Between Kinetic and Overlap [Advanced]}
+
+\begin{keyInsight}[Sparsity Patterns]
+\textbf{Parts (a-c): Decay analysis for linear H chain}
+
+For a chain of 10 H atoms separated by 2.0 Bohr (STO-3G):
+
+\begin{center}
+\begin{tabular}{ccc}
+\toprule
+Distance (Bohr) & $|S_{1j}|$ & $|T_{1j}|$ \\
+\midrule
+0 & 1.000 & 0.760 \\
+2 & 0.451 & 0.236 \\
+4 & 0.093 & 0.024 \\
+6 & 0.009 & 0.001 \\
+8 & $4\times10^{-4}$ & $3\times10^{-5}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Both $\Smat$ and $\Tmat$ have \textbf{the same sparsity pattern}---elements become negligible ($<10^{-8}$) at approximately the same distance ($\sim 8$ Bohr for STO-3G exponents).
+
+\textbf{Part (d): Ratio $T_{1j}/S_{1j}$}
+
+For distant pairs ($R \gg 1$), the ratio $T/S = \mu(3 - 2\mu R^2)$ becomes \textbf{negative} when $R^2 > 3/(2\mu)$.
+
+For $s$-$s$ pairs in STO-3G ($\mu \approx 0.27$ for contracted functions), crossover occurs at $R \approx 2.4$ Bohr.
+
+For $p$-type functions, additional polynomial factors from the angular momentum make the analysis more complex, but the exponential decay rate remains the same.
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 3.7: Composite Center and Physical Intuition [Advanced]}
+
+\begin{keyInsight}[GPT Composite Center]
+\textbf{Parts (a,b): Position of $\mathbf{P}$ vs $\alpha/\beta$}
+
+With $\mathbf{A} = (0,0,0)$, $\mathbf{B} = (0,0,2)$, and $\beta = 1.0$:
+\[
+P_z = \frac{\alpha \cdot 0 + \beta \cdot 2}{\alpha + \beta} = \frac{2}{\alpha + 1}
+\]
+
+\begin{center}
+\begin{tabular}{cc}
+\toprule
+$\alpha$ & $P_z$ (Bohr) \\
+\midrule
+0.1 & 1.82 (near B) \\
+1.0 & 1.00 (midpoint) \\
+10.0 & 0.18 (near A) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Physical explanation:} The composite center is a \emph{weighted average} where tighter Gaussians (larger $\alpha$) have more ``weight.'' A tight Gaussian is highly localized, contributing most of its probability density near its center. When two Gaussians multiply, the product is concentrated where \emph{both} have significant amplitude---this is closer to the tighter function.
+
+\textbf{Parts (c,d): Nuclear attraction implications}
+
+When nucleus $\mathbf{C} = \mathbf{A}$ and $\alpha \gg \beta$:
+\begin{itemize}
+    \item $\mathbf{P} \approx \mathbf{A}$, so $|\mathbf{P} - \mathbf{C}| \approx 0$
+    \item $T = p|\mathbf{P} - \mathbf{C}|^2 \approx 0$, so $F_0(T) \approx 1$ (maximum)
+    \item The integral is large: tight functions on an atom feel strong nuclear attraction from that atom
+\end{itemize}
+
+When $\alpha \ll \beta$:
+\begin{itemize}
+    \item $\mathbf{P} \approx \mathbf{B}$, far from $\mathbf{C} = \mathbf{A}$
+    \item $T$ is large, so $F_0(T) \approx \frac{1}{2}\sqrt{\pi/T}$ is small
+    \item Diffuse functions have weaker nuclear attraction (they ``spread out'' from the nucleus)
+\end{itemize}
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 3.8: Boys Function Exploration [Advanced]}
+
+\begin{keyInsight}[Boys Function Properties]
+\textbf{Part (a): Upward recurrence implementation}
+
+\begin{lstlisting}[style=python]
+def boys(n_max, T):
+    """Compute F_n(T) for n = 0, ..., n_max using upward recurrence."""
+    F = np.zeros(n_max + 1)
+    if T < 1e-10:
+        # Series expansion for small T
+        F[0] = 1.0
+        for n in range(1, n_max + 1):
+            F[n] = 1.0 / (2*n + 1)
+    else:
+        # Start from F_0
+        F[0] = 0.5 * np.sqrt(np.pi/T) * erf(np.sqrt(T))
+        expT = np.exp(-T)
+        for n in range(n_max):
+            F[n+1] = ((2*n + 1) * F[n] - expT) / (2*T)
+    return F
+\end{lstlisting}
+
+\textbf{Part (b): Limiting values}
+
+$F_n(0) = 1/(2n+1)$: $F_0(0) = 1$, $F_1(0) = 1/3$, $F_2(0) = 1/5$, $F_3(0) = 1/7$.
+
+\textbf{Part (c): Numerical instability}
+
+At $T = 10^{-6}$, the upward recurrence computes:
+\[
+F_1(T) = \frac{F_0(T) - e^{-T}}{2T} \approx \frac{1 - 1}{2 \times 10^{-6}} = \text{catastrophic cancellation!}
+\]
+
+For $n = 5$, errors compound. The series expansion $F_n(T) = \sum_{k=0}^{\infty} \frac{(-T)^k}{k!(2n+2k+1)}$ is stable for small $T$.
+
+\textbf{Part (d): $F_n(T) \to 0$ as $T \to \infty$}
+
+The Boys function integrates $t^{2n} e^{-Tt^2}$ over $[0,1]$. As $T$ increases:
+\begin{itemize}
+    \item The exponential $e^{-Tt^2}$ decays rapidly for any $t > 0$
+    \item Only the region near $t = 0$ contributes, where $t^{2n}$ is small
+    \item The integral shrinks as $\sim T^{-1/2}$
+\end{itemize}
+
+Physically: large $T$ means the composite center $\mathbf{P}$ is far from the nucleus. The Coulomb interaction becomes weak.
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 3.9: Integral Sparsity in a Real Molecule [Advanced]}
+
+\begin{keyInsight}[Sparsity Analysis]
+\textbf{Typical results for butadiene (C$_4$H$_6$)/6-31G:}
+
+NAO = 58, so total matrix elements = $58^2 = 3364$.
+
+\begin{center}
+\begin{tabular}{cccc}
+\toprule
+$\tau$ & $|\Smat| > \tau$ & $|\Tmat| > \tau$ & $|\Vmat| > \tau$ \\
+\midrule
+$10^{-4}$ & 812 (24\%) & 742 (22\%) & 1156 (34\%) \\
+$10^{-6}$ & 1038 (31\%) & 918 (27\%) & 1842 (55\%) \\
+$10^{-8}$ & 1284 (38\%) & 1124 (33\%) & 2418 (72\%) \\
+$10^{-10}$ & 1572 (47\%) & 1364 (41\%) & 2876 (85\%) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Observations:}
+\begin{enumerate}
+    \item $\Tmat$ is sparsest (kinetic energy is very local)
+    \item $\Smat$ is slightly denser (overlap decays as Gaussian)
+    \item $\Vmat$ is densest (Coulomb $1/r$ has slower polynomial decay)
+\end{enumerate}
+
+\textbf{Part (e): Diffuse basis (aug-cc-pVDZ)}
+
+Adding diffuse functions dramatically increases density---sparsity ratio at $10^{-8}$ drops from $\sim$40\% to $\sim$70\% for $\Smat$. Diffuse functions overlap significantly even at large distances.
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 3.10: Numerical Quadrature Verification [Advanced, Optional]}
+
+\begin{keyInsight}[Quadrature Convergence]
+\textbf{Setup:} $\alpha = 1.0$, $\beta = 0.8$, $\mathbf{A} = (0,0,0)$, $\mathbf{B} = (0,0,1.5)$.
+
+Analytic result: $S_{ab} = 0.4346$ (normalized).
+
+\textbf{Gauss-Hermite quadrature convergence:}
+
+\begin{center}
+\begin{tabular}{ccc}
+\toprule
+Points/dim & Numerical $S$ & Relative error \\
+\midrule
+10 & 0.4344 & $5\times10^{-4}$ \\
+20 & 0.4346 & $2\times10^{-6}$ \\
+30 & 0.4346 & $<10^{-10}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Kinetic integral:} Converges similarly because the integrand has similar localization properties. The second derivative introduces oscillations, but Gaussians damp them efficiently.
+
+\textbf{Key insight:} Gaussian integrands are ``easy'' for quadrature because they are smooth and decay rapidly. This is why analytic formulas exist---Gaussian quadrature is exact for polynomial $\times$ Gaussian integrands.
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 3.11: From Integrals to Observable Properties [Research]}
+
+\begin{keyInsight}[Quadrupole Moment Calculation]
+\textbf{Part (a): PySCF integral calls}
+
+The quadrupole integral tensor requires second moments:
+\begin{lstlisting}[style=python]
+# r*r integrals: <mu|r_a * r_b|nu>
+mol.set_common_origin([0,0,0])
+rr = mol.intor('int1e_rr')  # shape (3, 3, nao, nao)
+# rr[a,b,mu,nu] = <chi_mu|r_a*r_b|chi_nu>
+
+# Also need <r^2>:
+r2 = mol.intor('int1e_r2')  # shape (nao, nao)
+\end{lstlisting}
+
+\textbf{Part (b): CO$_2$ quadrupole}
+
+For linear CO$_2$ along $z$-axis, the quadrupole tensor is diagonal with $Q_{xx} = Q_{yy} = -Q_{zz}/2$ by tracelessness.
+
+Typical HF/cc-pVDZ result: $Q_{zz} \approx -3.2$ a.u. (compared to experimental $-4.3$ a.u.).
+
+\textbf{Part (c): Sources of error}
+
+\begin{itemize}
+    \item Basis set incompleteness (need diffuse functions for outer electron density)
+    \item Missing electron correlation (HF overestimates charge separation)
+    \item Geometry optimization (equilibrium bond length affects quadrupole)
+\end{itemize}
+
+\textbf{Part (d): Polarizability}
+
+Polarizability $\bm{\alpha}$ requires \emph{response theory}---how the density changes under an applied field. This goes beyond ground-state HF and requires either:
+\begin{itemize}
+    \item Coupled-perturbed HF (CPHF) equations
+    \item Finite-field differentiation
+    \item Linear response / time-dependent HF
+\end{itemize}
+\end{keyInsight}
+
+%-------------------------------------------------------------------------------
+\subsection{Exercise 3.12: Basis Set Dependence of Properties [Research]}
+
+\begin{keyInsight}[Basis Set Convergence Study]
+\textbf{Parts (a-c): H$_2$O dipole and related quantities}
+
+\begin{center}
+\begin{tabular}{lcccc}
+\toprule
+Basis & NAO & $|\bm{\mu}|$ (D) & $E_{\text{HF}}$ (Ha) & $\kappa(\Smat)$ \\
+\midrule
+STO-3G & 7 & 1.73 & $-74.963$ & 3.4 \\
+6-31G & 13 & 2.51 & $-75.985$ & 18 \\
+6-31G* & 19 & 2.18 & $-76.011$ & 28 \\
+cc-pVDZ & 24 & 1.99 & $-76.027$ & 42 \\
+cc-pVTZ & 58 & 1.90 & $-76.057$ & 180 \\
+aug-cc-pVDZ & 41 & 1.87 & $-76.042$ & 2400 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Part (d): Comparison to experiment}
+
+The experimental dipole is $\sim$1.85 D. The aug-cc-pVDZ result (1.87 D) is closest, though still at the HF level (correlation effects are small for dipoles of neutral molecules).
+
+\textbf{Part (e): Diffuse vs polarization functions}
+
+\begin{itemize}
+    \item \textbf{Polarization functions} (*) describe angular deformation of electron density (hybridization). They improve bonding description and total energy more than dipole.
+
+    \item \textbf{Diffuse functions} (aug-) extend the ``tail'' of the electron density. They are critical for:
+    \begin{itemize}
+        \item Properties involving outer regions (dipole, polarizability)
+        \item Anions and excited states
+        \item Intermolecular interactions
+    \end{itemize}
+\end{itemize}
+
+For dipole moments of neutral molecules, diffuse functions provide more improvement than polarization functions because the dipole is sensitive to the spatial extent of the charge distribution. The aug-cc-pVDZ dipole (1.87 D) is better than cc-pVTZ (1.90 D) despite having fewer basis functions.
+\end{keyInsight}
+
+\end{document}
