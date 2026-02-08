@@ -65,9 +65,9 @@ def symmetric_orthogonalizer(S: np.ndarray,
     if n_discarded > 0:
         print(f"  Warning: Discarding {n_discarded} near-linear dependent basis functions")
 
-    # Build X = U s^(-1/2) U^T (for kept eigenvalues)
+    # Build X = U_keep s^(-1/2) -- rectangular (N x N') matrix
     s_inv_sqrt = 1.0 / np.sqrt(eigenvalues[keep])
-    X = U[:, keep] @ np.diag(s_inv_sqrt) @ U[:, keep].T
+    X = U[:, keep] @ np.diag(s_inv_sqrt)
 
     return X
 

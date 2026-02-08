@@ -163,7 +163,7 @@ def symmetric_orthogonalizer(S: np.ndarray, threshold: float = 1e-10) -> np.ndar
     eigenvalues, U = np.linalg.eigh(S)
     keep = eigenvalues > threshold
     s_inv_sqrt = 1.0 / np.sqrt(eigenvalues[keep])
-    X = U[:, keep] @ np.diag(s_inv_sqrt) @ U[:, keep].T
+    X = U[:, keep] @ np.diag(s_inv_sqrt)  # rectangular (N x N')
     return X
 
 

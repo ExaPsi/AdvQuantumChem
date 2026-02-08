@@ -59,7 +59,7 @@ def symmetric_orthogonalizer(S: np.ndarray, thresh: float = 1e-10) -> np.ndarray
     if n_dropped > 0:
         print(f"  Dropped {n_dropped} near-linear dependent functions")
     s_inv_sqrt = 1.0 / np.sqrt(eigenvalues[keep])
-    X = U[:, keep] @ np.diag(s_inv_sqrt) @ U[:, keep].T
+    X = U[:, keep] @ np.diag(s_inv_sqrt)  # rectangular (N x N')
     return X
 
 
